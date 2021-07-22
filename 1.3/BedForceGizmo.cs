@@ -11,7 +11,7 @@ namespace BedAssign
 			if (this.owner != null)
             {
 				GUI.color = Color.white;
-				Texture portrait = PortraitsCache.Get(this.owner, Vector2.one * 75f, Rot4.South, default, 1.25f);
+				RenderTexture portrait = PortraitsCache.Get(this.owner, Vector2.one * 75f, Rot4.South, default, 1.25f);
 				Widgets.DrawTextureFitted(rect, portrait, 1, new Vector2(portrait.width, portrait.height), new Rect(0f, 0f, 1f, 1f));
 			}
 			else

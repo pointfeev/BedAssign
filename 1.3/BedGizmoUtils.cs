@@ -40,7 +40,7 @@ namespace BedAssign
                 }
             }
 
-            if (forcedPawns.Count < bed.CompAssignableToPawn.MaxAssignedPawnsCount)
+            if (forcedPawns.Count < bed.TotalSleepingSlots)
             {
                 foreach (Pawn pawn in bed.OwnersForReading)
                 {

@@ -41,11 +41,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BedForceGizmo.cs" />
-    <Compile Include="BedAssignData.cs" />
-    <Compile Include="BedGizmoUtils.cs" />
-    <Compile Include="HarmonyPatches.cs" />
     <Compile Include="BedAssign.cs" />
+    <Compile Include="BedAssignData.cs" />
+    <Compile Include="BedForceGizmo.cs" />
+    <Compile Include="BedGizmoUtils.cs" />
+    <Compile Include="ClaimUtils.cs" />
+    <Compile Include="HarmonyPatches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

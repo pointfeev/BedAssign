@@ -6,104 +6,6 @@ namespace BedAssign
 {
     public static class BedAssign
     {
-        public static Building_Bed GetForcedPawnBedIfPossible(Pawn pawn)
-        {
-            if (pawn == null) { return null; }
-            Building_Bed pawnForcedBed = BedAssignData.ForcedPawnBed.TryGetValue(pawn);
-            if (pawnForcedBed != null && pawn.Map == pawnForcedBed.Map)
-            {
-                Log.Message("[BedAssign] GetForcedPawnBedIfPossible: returned " + pawnForcedBed.LabelShort + " for " + pawn.LabelShort);
-                return pawnForcedBed;
-            }
-            return null;
-        }
-
-        public static Pawn GetMostLikedLovePartnerIfPossible(Pawn pawn)
-        {
-            if (pawn == null) { return null; }
-            Pawn partner = LovePartnerRelationUtility.ExistingMostLikedLovePartner(pawn, false);
-            if (partner != null && pawn.Map == partner.Map)
-            {
-                Log.Message("[BedAssign] GetMostLikedLovePartnerIfPossible: returned " + partner.LabelShort + " for " + pawn.LabelShort);
-                return partner;
-            }
-            return null;
-        }
-
-        public static void MakeSpaceInBed(Pawn pawn, Building_Bed bed)
-        {
-            MakeSpaceInBed(pawn, bed, null);
-        }
-
-        public static void MakeSpaceInBed(Pawn pawn, Building_Bed bed, Pawn lover)
-        {
-            if (pawn == null || bed == null) { return; }
-            List<Pawn> owners = bed.OwnersForReading;
-            if (owners.Count > 0)
-            {
-                for (int i = owners.Count - 1; i >= 0; i--)
-                {
-                    Pawn sleeper = owners[i];
-                    if (!LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper))
-                    {
-                        if (!LovePartnerRelationUtility.LovePartnerRelationExists(lover, sleeper) || GetMostLikedLovePartnerIfPossible(lover) != sleeper)
-                        {
-                            if (UnclaimBedIfPossible(sleeper))
-                            {
-                                Log.Message("[BedAssign] MakeSpaceInBed: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make room for " + pawn.LabelShort);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public static bool ClaimBedIfPossible(Pawn pawn, Building_Bed bed)
-        {
-            return ClaimBedIfPossible(pawn, bed, null);
-        }
-
-        public static bool ClaimBedIfPossible(Pawn pawn, Building_Bed bed, Pawn pawnLoverToMakeSpaceWith)
-        {
-            if (pawn == null || bed == null) { Log.Message("[BedAssign] ClaimBedIfPossible failed: null parameter"); return false; }
-            if (pawn.Map != bed.Map) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort); return false; }
-
-            Building_Bed pawnBed = pawn.ownership.OwnedBed;
-            if (pawnBed == bed) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + pawn.LabelShort + " already claims " + bed.LabelShort); return false; }
-
-            Building_Bed pawnForcedBed = GetForcedPawnBedIfPossible(pawn);
-            bool forced = pawnForcedBed == null || pawnForcedBed == bed;
-            if (!forced) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + bed.LabelShort + " is not " + pawn.LabelShort + "'s forced bed"); return false; }
-
-            try { MakeSpaceInBed(pawn, bed, pawnLoverToMakeSpaceWith); } catch { }
-            if (bed.OwnersForReading.Count < bed.SleepingSlotsCount)
-            {
-                Log.Message("[BedAssign] ClaimBedIfPossible succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);
-                pawn.ownership.ClaimBedIfNonMedical(bed);
-                return true;
-            }
-            Log.Message("[BedAssign] ClaimBedIfPossible failed: unable to make room for " + pawn.LabelShort + " in " + bed.LabelShort);
-            return false;
-        }
-
-        public static bool UnclaimBedIfPossible(Pawn pawn)
-        {
-            if (pawn == null) { Log.Message("[BedAssign] UnclaimBedIfPossible failed: null parameter"); return false; }
-
-            Building_Bed pawnBed = pawn.ownership.OwnedBed;
-            if (pawnBed == null) { Log.Message("[BedAssign] UnclaimBedIfPossible failed: " + pawn.LabelShort + " has no bed"); return false; }
-
-            Building_Bed pawnForcedBed = BedAssignData.ForcedPawnBed.TryGetValue(pawn);
-            if (pawnForcedBed == null || pawnForcedBed != pawnBed || pawnForcedBed.Map != pawn.Map)
-            {
-                Log.Message("[BedAssign] UnclaimBedIfPossible succeeded: " + pawn.LabelShort + " unclaimed " + pawnBed.LabelShort);
-                pawn.ownership.UnclaimBed();
-                return true;
-            }
-            Log.Message("[BedAssign] UnclaimBedIfPossible failed: " + pawn.LabelShort + " can't unclaim forced bed");
-            return false;
-        }
-
         public static void CheckBeds(Pawn pawn)
         {
             if (pawn == null || pawn.ownership == null) { return; }
@@ -117,10 +19,10 @@ namespace BedAssign
             }
 
             // Attempt to claim forced bed
-            Building_Bed forcedBed = GetForcedPawnBedIfPossible(pawn);
+            Building_Bed forcedBed = ClaimUtils.GetForcedPawnBedIfPossible(pawn);
             if (forcedBed != null)
             {
-                if (ClaimBedIfPossible(pawn, forcedBed))
+                if (ClaimUtils.ClaimBedIfPossible(pawn, forcedBed))
                 {
                     Log.Message("[BedAssign] " + pawn.LabelShort + " claimed their forced bed.");
                     return;
@@ -128,16 +30,61 @@ namespace BedAssign
             }
 
             // Attempt to avoid the "Want to sleep with partner" moodlet
-            Pawn pawnLover = GetMostLikedLovePartnerIfPossible(pawn);
+            Pawn pawnLover = ClaimUtils.GetMostLikedLovePartnerIfPossible(pawn);
             if (pawnLover != null)
             {
+                // Attempt to simply claim their lover's bed
                 Building_Bed loverBed = pawnLover.ownership.OwnedBed;
-                if (loverBed != null)
+                if (loverBed != null && currentBed != loverBed)
                 {
-                    if (ClaimBedIfPossible(pawn, loverBed, pawnLover))
+                    if (loverBed.SleepingSlotsCount > 1)
                     {
-                        Log.Message("[BedAssign] " + pawn.LabelShort + " claimed their lover's bed.");
-                        return;
+                        if (ClaimUtils.ClaimBedIfPossible(pawn, loverBed, pawnLover))
+                        {
+                            Log.Message("[BedAssign] " + pawn.LabelShort + " claimed the bed of their lover, " + pawnLover.LabelShort + ".");
+                            return;
+                        }
+                    }
+                    else if (ClaimUtils.GetMostLikedLovePartnerIfPossible(pawnLover) == pawn)
+                    {
+                        // Attempt to claim a bed that has more than one sleeping spot for the lovers
+                        foreach (Building_Bed bed in pawn.Map.listerBuildings.AllBuildingsColonistOfClass<Building_Bed>())
+                        {
+                            if (!bed.Medical && bed.SleepingSlotsCount > 1)
+                            {
+                                bool canClaim = true;
+                                List<Pawn> owners = bed.OwnersForReading;
+                                if (owners.Count > 0)
+                                {
+                                    for (int i = owners.Count - 1; i >= 0; i--)
+                                    {
+                                        Pawn sleeper = owners[i];
+                                        if (ClaimUtils.GetMostLikedLovePartnerIfPossible(sleeper) is null)
+                                        {
+                                            if (ClaimUtils.UnclaimBedIfPossible(sleeper))
+                                            {
+                                                Log.Message("[BedAssign] Kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make room for " + pawn.LabelShort + " and their lover, " + pawnLover.LabelShort);
+                                            }
+                                            else
+                                            {
+                                                canClaim = false;
+                                                break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            canClaim = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (canClaim && ClaimUtils.ClaimBedIfPossible(pawn, bed) && ClaimUtils.ClaimBedIfPossible(pawnLover, bed))
+                                {
+                                    Log.Message($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover.LabelShort}, claimed a bed together");
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -145,7 +92,7 @@ namespace BedAssign
             // Attempt to avoid the "Sharing bed" moodlet
             if (LovePartnerRelationUtility.GetMostDislikedNonPartnerBedOwner(pawn) != null)
             {
-                if (UnclaimBedIfPossible(pawn))
+                if (ClaimUtils.UnclaimBedIfPossible(pawn))
                 {
                     Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed to avoid 'Sharing bed' moodlet.");
                     return;

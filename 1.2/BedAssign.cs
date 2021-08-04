@@ -156,15 +156,18 @@ namespace BedAssign
                     }
                 }
             }
-            // ... for themself
-            foreach (Building_Bed bed in bedsSorted)
+            else
             {
-                if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
-                    !(bed.GetRoom() is null) && bed.GetRoom().GetStat(RoomStatDefOf.Impressiveness) > currentRoomImpressiveness && // is the room's impressiveness better than their current?
-                    ClaimUtils.ClaimBedIfPossible(pawn, bed))
+                // ... for themself
+                foreach (Building_Bed bed in bedsSorted)
                 {
-                    Log.Message("[BedAssign] " + pawn.LabelShort + " claimed an empty bed in a more impressive room.");
-                    return;
+                    if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
+                        !(bed.GetRoom() is null) && bed.GetRoom().GetStat(RoomStatDefOf.Impressiveness) > currentRoomImpressiveness && // is the room's impressiveness better than their current?
+                        ClaimUtils.ClaimBedIfPossible(pawn, bed))
+                    {
+                        Log.Message("[BedAssign] " + pawn.LabelShort + " claimed an empty bed in a more impressive room.");
+                        return;
+                    }
                 }
             }
         }

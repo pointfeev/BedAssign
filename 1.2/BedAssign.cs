@@ -1,6 +1,7 @@
 ﻿using RimWorld;
 using System.Collections.Generic;
 using Verse;
+using System.Linq;
 
 namespace BedAssign
 {
@@ -8,7 +9,7 @@ namespace BedAssign
     {
         public static void CheckBeds(Pawn pawn)
         {
-            if (pawn == null || pawn.ownership == null) { return; }
+            if (pawn is null || pawn.ownership is null || pawn.Map is null) { return; }
 
             // Unclaim off-map bed to give space to other colonists
             Building_Bed currentBed = pawn.ownership.OwnedBed;
@@ -30,15 +31,22 @@ namespace BedAssign
             }
 
             // Get and sort all beds on the pawn's map in descending order by their room's impressiveness
-            List<Building_Bed> bedsSorted = (List<Building_Bed>)pawn.Map.listerBuildings.AllBuildingsColonistOfClass<Building_Bed>();
+            List<Building_Bed> bedsSorted = pawn.Map.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
+            if (bedsSorted is null)
+                bedsSorted = new List<Building_Bed>();
             bedsSorted.Sort(delegate (Building_Bed bed1, Building_Bed bed2)
             {
+                if (bed1 is null)
+                    return -1;
+                else if (bed2 is null)
+                    return 1;
+
                 Room room1 = bed1.GetRoom();
                 Room room2 = bed2.GetRoom();
 
                 if (room1 is null)
                     return -1;
-                if (room2 is null)
+                else if (room2 is null)
                     return 1;
 
                 float imp1 = room1.GetStat(RoomStatDefOf.Impressiveness);

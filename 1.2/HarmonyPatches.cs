@@ -3,6 +3,7 @@ using Verse;
 using HarmonyLib;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 namespace BedAssign
 {
@@ -25,7 +26,14 @@ namespace BedAssign
 
         public static bool JobPrefix(Pawn pawn)
         {
-            BedAssign.CheckBeds(pawn);
+            try
+            {
+                BedAssign.CheckBeds(pawn);
+            }
+            catch (Exception e)
+            {
+                Log.Error("[BedAssign] CheckBeds experienced an exception: " + e.Message + "\n" + e.StackTrace);
+            }
             return true;
         }
 

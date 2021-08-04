@@ -113,7 +113,7 @@ namespace BedAssign
                                     Log.Message($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover.LabelShort}, claimed a bed together");
                                     break;
                                 }
-                                else if (canClaim && !(currentBed is null))
+                                else if (canClaim && !(currentBed is null)) // undo the change if both partners didn't successfully claim the bed together
                                 {
                                     ClaimUtils.ClaimBedIfPossible(pawn, currentBed);
                                 }
@@ -150,7 +150,7 @@ namespace BedAssign
                         Log.Message($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover.LabelShort}, claimed an empty bed in a more impressive room together");
                         return;
                     }
-                    else if (!(currentBed is null))
+                    else if (!(currentBed is null)) // undo the change if both partners didn't successfully claim the bed together
                     {
                         ClaimUtils.ClaimBedIfPossible(pawn, currentBed);
                     }

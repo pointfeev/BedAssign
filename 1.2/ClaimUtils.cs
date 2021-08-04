@@ -59,7 +59,7 @@ namespace BedAssign
             if (pawn.Map != bed.Map) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort); return false; }
 
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
-            if (pawnBed == bed) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + pawn.LabelShort + " already claims " + bed.LabelShort); return false; }
+            if (pawnBed == bed) { /*Log.Message("[BedAssign] ClaimBedIfPossible failed: " + pawn.LabelShort + " already claims " + bed.LabelShort);*/ return false; }
 
             Building_Bed pawnForcedBed = GetForcedPawnBedIfPossible(pawn);
             bool forced = pawnForcedBed == null || pawnForcedBed == bed;
@@ -81,7 +81,7 @@ namespace BedAssign
             if (pawn == null) { Log.Message("[BedAssign] UnclaimBedIfPossible failed: null parameter"); return false; }
 
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
-            if (pawnBed == null) { Log.Message("[BedAssign] UnclaimBedIfPossible failed: " + pawn.LabelShort + " has no bed"); return false; }
+            if (pawnBed == null) { /*Log.Message("[BedAssign] UnclaimBedIfPossible failed: " + pawn.LabelShort + " has no bed");*/ return false; }
 
             Building_Bed pawnForcedBed = BedAssignData.ForcedPawnBed.TryGetValue(pawn);
             if (pawnForcedBed == null || pawnForcedBed != pawnBed || pawnForcedBed.Map != pawn.Map)

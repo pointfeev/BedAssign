@@ -11,7 +11,7 @@ namespace BedAssign
         {
             if (pawn is null || pawn.ownership is null || pawn.Map is null) { return; }
 
-            if (pawn.def is null || pawn.def.race is null || !pawn.def.race.Humanlike) { return; }
+            if (pawn.def is null || pawn.def.race is null || !pawn.def.race.Humanlike) { return; } // make sure we only touch human colonists
 
             // Unclaim off-map bed to give space to other colonists
             Building_Bed currentBed = pawn.ownership.OwnedBed;
@@ -36,6 +36,7 @@ namespace BedAssign
             List<Building_Bed> bedsSorted = pawn.Map.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
             if (bedsSorted is null)
                 bedsSorted = new List<Building_Bed>();
+            bedsSorted.RemoveAll(bed => !bed.def.building.bed_humanlike); // remove all non-humanlike beds since we don't touch animals anyways
             bedsSorted.Sort(delegate (Building_Bed bed1, Building_Bed bed2)
             {
                 if (bed1 is null)
@@ -82,7 +83,8 @@ namespace BedAssign
                         // Attempt to claim a bed that has more than one sleeping spot for the lovers
                         foreach (Building_Bed bed in bedsSorted)
                         {
-                            if (!bed.Medical && bed.SleepingSlotsCount > 1)
+                            if (!bed.Medical && bed.SleepingSlotsCount > 1 &&
+                                RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def))
                             {
                                 bool canClaim = true;
                                 List<Pawn> owners = bed.OwnersForReading;
@@ -145,7 +147,8 @@ namespace BedAssign
                 foreach (Building_Bed bed in bedsSorted)
                 {
                     if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
-                        bed.SleepingSlotsCount > 1 && // does the bed have slots for both the lovers?
+                        RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def) && // can the bed be used by both lovers?
+                        bed.SleepingSlotsCount > 1 && // does the bed have slots for both lovers?
                         !(bed.GetRoom() is null) && bed.GetRoom().GetStat(RoomStatDefOf.Impressiveness) > currentRoomImpressiveness && // is the room's impressiveness better than their current?
                         ClaimUtils.ClaimBedIfPossible(pawn, bed) && ClaimUtils.ClaimBedIfPossible(pawnLover, bed))
                     {
@@ -164,6 +167,7 @@ namespace BedAssign
                 foreach (Building_Bed bed in bedsSorted)
                 {
                     if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
+                        RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
                         !(bed.GetRoom() is null) && bed.GetRoom().GetStat(RoomStatDefOf.Impressiveness) > currentRoomImpressiveness && // is the room's impressiveness better than their current?
                         ClaimUtils.ClaimBedIfPossible(pawn, bed))
                     {

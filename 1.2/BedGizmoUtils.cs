@@ -33,6 +33,10 @@ namespace BedAssign
             List<Pawn> forcedPawns = new List<Pawn>();
             foreach (KeyValuePair<Pawn, Building_Bed> entry in BedAssignData.ForcedPawnBed)
             {
+                if (!ClaimUtils.CanUsePawn(entry.Key))
+                {
+                    continue;
+                }
                 if (entry.Value == bed)
                 {
                     gizmos.Add(CreateBedForceGizmo(bed, entry.Key));
@@ -44,6 +48,10 @@ namespace BedAssign
             {
                 foreach (Pawn pawn in bed.OwnersForReading)
                 {
+                    if (!ClaimUtils.CanUsePawn(pawn))
+                    {
+                        continue;
+                    }
                     if (!forcedPawns.Contains(pawn))
                     {
                         gizmos.Add(CreateBedForceGizmo(bed, pawn));

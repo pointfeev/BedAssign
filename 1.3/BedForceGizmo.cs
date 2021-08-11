@@ -8,10 +8,10 @@ namespace BedAssign
 	{
 		protected override void DrawIcon(Rect rect, Material buttonMat, GizmoRenderParms gizmoRenderParms)
         {
-			if (this.owner != null)
+			if (owner != null)
             {
 				GUI.color = Color.white;
-				RenderTexture portrait = PortraitsCache.Get(this.owner, Vector2.one * 75f, Rot4.South, default, 1.25f);
+				RenderTexture portrait = PortraitsCache.Get(owner, Vector2.one * 75f, Rot4.South, default, 1.25f);
 				Widgets.DrawTextureFitted(rect, portrait, 1, new Vector2(portrait.width, portrait.height), new Rect(0f, 0f, 1f, 1f));
 			}
 			else
@@ -34,14 +34,14 @@ namespace BedAssign
 		public override GizmoResult GizmoOnGUI(Vector2 topLeft, float maxWidth, GizmoRenderParms gizmoRenderParms)
 		{
 			GizmoResult result = base.GizmoOnGUI(topLeft, maxWidth, gizmoRenderParms);
-			if (this.owner != null)
+			if (owner != null)
             {
-				Rect butRect = new Rect(topLeft.x, topLeft.y, this.GetWidth(maxWidth), 75f);
+				Rect butRect = new Rect(topLeft.x, topLeft.y, GetWidth(maxWidth), 75f);
 
 				Text.Font = GameFont.Tiny;
 				GUI.color = Color.white;
 
-				string topText = this.owner.LabelShort;
+				string topText = owner.LabelShort;
 				float topTextHeight = Text.CalcHeight(topText, butRect.width);
 				Rect topTextRect = new Rect(butRect.x, butRect.yMin - topTextHeight + 12f, butRect.width, topTextHeight);
 

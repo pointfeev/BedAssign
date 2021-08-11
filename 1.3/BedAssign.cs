@@ -9,9 +9,7 @@ namespace BedAssign
     {
         public static void CheckBeds(Pawn pawn)
         {
-            if (pawn is null || pawn.ownership is null || pawn.Map is null) { return; }
-
-            if (pawn.def is null || pawn.def.race is null || !pawn.def.race.Humanlike) { return; } // make sure we only touch human colonists
+            if (!ClaimUtils.CanUsePawn(pawn)) { return; }
 
             // Unclaim off-map bed to give space to other colonists
             Building_Bed currentBed = pawn.ownership.OwnedBed;

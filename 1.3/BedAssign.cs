@@ -30,6 +30,8 @@ namespace BedAssign
                 }
             }
 
+            if (pawn.Map is null) { return; }
+
             // Get and sort all beds on the pawn's map in descending order by their room's impressiveness
             List<Building_Bed> bedsSorted = pawn.Map.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
             if (bedsSorted is null)

@@ -8,7 +8,7 @@ namespace BedAssign
     {
         public static bool CanUsePawn(Pawn pawn)
         {
-            if (pawn is null || pawn.ownership is null || pawn.Map is null) { return false; }
+            if (pawn is null || pawn.ownership is null) { return false; }
             if (pawn.Faction == Faction.OfPlayerSilentFail || !pawn.IsFreeColonist) { return false; }
             if (pawn.def is null || pawn.def.race is null || !pawn.def.race.Humanlike) { return false; }
             return true;

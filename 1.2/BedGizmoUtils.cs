@@ -30,6 +30,8 @@ namespace BedAssign
 
         public static List<Gizmo> CreateBedGizmos(Building_Bed bed, List<Gizmo> gizmos)
         {
+            if (bed.Medical) { return gizmos; }
+
             List<Pawn> forcedPawns = new List<Pawn>();
             foreach (KeyValuePair<Pawn, Building_Bed> entry in BedAssignData.ForcedPawnBed)
             {

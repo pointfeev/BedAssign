@@ -68,7 +68,7 @@ namespace BedAssign
             {
                 // Attempt to simply claim their lover's bed
                 Building_Bed loverBed = pawnLover.ownership.OwnedBed;
-                if (loverBed != null && currentBed != loverBed)
+                if (loverBed != null && !loverBed.Medical && currentBed != loverBed)
                 {
                     if (loverBed.TotalSleepingSlots > 1)
                     {

@@ -40,7 +40,7 @@ namespace BedAssign
 
         public static void MakeSpaceInBed(Pawn pawn, Building_Bed bed, Pawn lover)
         {
-            if (!CanUsePawn(pawn) || bed == null) { return; }
+            if (!CanUsePawn(pawn) || bed == null || bed.Medical) { return; }
             if (!BedUtility.WillingToShareBed(pawn, lover)) { Log.Message($"[BedAssign] MakeSpaceInBed failed: {pawn.LabelShort} and their lover, {lover.LabelShort}, aren't willing to share a bed together"); return; }
             List<Pawn> owners = bed.OwnersForReading;
             if (owners.Count > 0)
@@ -64,7 +64,7 @@ namespace BedAssign
 
         public static bool ClaimBedIfPossible(Pawn pawn, Building_Bed bed, Pawn pawnLoverToMakeSpaceWith = null)
         {
-            if (!CanUsePawn(pawn) || bed == null) { Log.Message("[BedAssign] ClaimBedIfPossible failed: null parameter"); return false; }
+            if (!CanUsePawn(pawn) || bed == null || bed.Medical) { return false; }
             if (pawn.Map != bed.Map) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort); return false; }
 
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
@@ -89,7 +89,7 @@ namespace BedAssign
 
         public static bool UnclaimBedIfPossible(Pawn pawn)
         {
-            if (!CanUsePawn(pawn)) { Log.Message("[BedAssign] UnclaimBedIfPossible failed: null parameter"); return false; }
+            if (!CanUsePawn(pawn)) { return false; }
 
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == null) { /*Log.Message("[BedAssign] UnclaimBedIfPossible failed: " + pawn.LabelShort + " has no bed");*/ return false; }

@@ -1,5 +1,6 @@
 ﻿using RimWorld;
 using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace BedAssign
@@ -28,25 +29,32 @@ namespace BedAssign
             };
         }
 
-        public static List<Gizmo> CreateBedGizmos(Building_Bed bed, List<Gizmo> gizmos)
+        public static IEnumerable<Gizmo> CreateBedGizmos(Building_Bed bed, IEnumerable<Gizmo> gizmos)
         {
             if (bed.Medical) { return gizmos; }
 
+            List<Gizmo> Gizmos = gizmos.ToList();
+
             List<Pawn> forcedPawns = new List<Pawn>();
-            foreach (KeyValuePair<Pawn, Building_Bed> entry in BedAssignData.ForcedPawnBed)
+            foreach (KeyValuePair<Pawn, Building_Bed> entry in BedAssignData.ForcedPawnBed.ToList())
             {
                 if (!ClaimUtils.CanUsePawn(entry.Key))
                 {
+                    if (entry.Value.OwnersForReading.Contains(entry.Key))
+                    {
+                        entry.Value.OwnersForReading.Remove(entry.Key);
+                    }
+                    BedAssignData.ForcedPawnBed.Remove(entry.Key);
                     continue;
                 }
                 if (entry.Value == bed)
                 {
-                    gizmos.Add(CreateBedForceGizmo(bed, entry.Key));
+                    Gizmos.Add(CreateBedForceGizmo(bed, entry.Key));
                     forcedPawns.Add(entry.Key);
                 }
             }
 
-            if (forcedPawns.Count < bed.SleepingSlotsCount)
+            if (forcedPawns.Count < bed.GetSlotCount())
             {
                 foreach (Pawn pawn in bed.OwnersForReading)
                 {
@@ -56,12 +64,12 @@ namespace BedAssign
                     }
                     if (!forcedPawns.Contains(pawn))
                     {
-                        gizmos.Add(CreateBedForceGizmo(bed, pawn));
+                        Gizmos.Add(CreateBedForceGizmo(bed, pawn));
                     }
                 }
             }
 
-            return gizmos;
+            return Gizmos.AsEnumerable();
         }
     }
 }

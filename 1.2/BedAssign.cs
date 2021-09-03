@@ -2,11 +2,17 @@
 using System.Collections.Generic;
 using Verse;
 using System.Linq;
+using System;
 
 namespace BedAssign
 {
     public static class BedAssign
     {
+        public static int GetSlotCount(this Building_Bed bed)
+        {
+            return bed.SleepingSlotsCount;
+        }
+
         public static void CheckBeds(Pawn pawn)
         {
             if (!ClaimUtils.CanUsePawn(pawn)) { return; }
@@ -16,7 +22,7 @@ namespace BedAssign
             if (currentBed != null && pawn.Map != currentBed.Map)
             {
                 pawn.ownership.UnclaimBed();
-                Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed due to being on a different map.");
+                Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed due to being on a different map");
             }
 
             // Attempt to claim forced bed
@@ -25,7 +31,7 @@ namespace BedAssign
             {
                 if (ClaimUtils.ClaimBedIfPossible(pawn, forcedBed))
                 {
-                    Log.Message("[BedAssign] " + pawn.LabelShort + " claimed their forced bed.");
+                    Log.Message("[BedAssign] " + pawn.LabelShort + " claimed their forced bed");
                     return;
                 }
             }
@@ -70,11 +76,11 @@ namespace BedAssign
                 Building_Bed loverBed = pawnLover.ownership.OwnedBed;
                 if (loverBed != null && !loverBed.Medical && currentBed != loverBed)
                 {
-                    if (loverBed.SleepingSlotsCount > 1)
+                    if (loverBed.AnyUnownedSleepingSlot)
                     {
                         if (ClaimUtils.ClaimBedIfPossible(pawn, loverBed, pawnLover))
                         {
-                            Log.Message("[BedAssign] " + pawn.LabelShort + " claimed the bed of their lover, " + pawnLover.LabelShort + ".");
+                            Log.Message("[BedAssign] " + pawn.LabelShort + " claimed the bed of their lover, " + pawnLover.LabelShort);
                             return;
                         }
                     }
@@ -83,7 +89,7 @@ namespace BedAssign
                         // Attempt to claim a bed that has more than one sleeping spot for the lovers
                         foreach (Building_Bed bed in bedsSorted)
                         {
-                            if (!bed.Medical && bed.SleepingSlotsCount > 1 &&
+                            if (!bed.Medical && bed.GetSlotCount() >= 2 &&
                                 RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def))
                             {
                                 bool canClaim = true;
@@ -132,7 +138,7 @@ namespace BedAssign
             {
                 if (ClaimUtils.UnclaimBedIfPossible(pawn))
                 {
-                    Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed to avoid 'Sharing bed' moodlet.");
+                    Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed to avoid 'Sharing bed' moodlet");
                     return;
                 }
             }
@@ -148,7 +154,7 @@ namespace BedAssign
                 {
                     if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
                         RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def) && // can the bed be used by both lovers?
-                        bed.SleepingSlotsCount > 1 && // does the bed have slots for both lovers?
+                        bed.GetSlotCount() >= 2 && // does the bed have slots for both lovers?
                         !(bed.GetRoom() is null) && bed.GetRoom().GetStat(RoomStatDefOf.Impressiveness) > currentRoomImpressiveness && // is the room's impressiveness better than their current?
                         ClaimUtils.ClaimBedIfPossible(pawn, bed) && ClaimUtils.ClaimBedIfPossible(pawnLover, bed))
                     {
@@ -171,7 +177,7 @@ namespace BedAssign
                         !(bed.GetRoom() is null) && bed.GetRoom().GetStat(RoomStatDefOf.Impressiveness) > currentRoomImpressiveness && // is the room's impressiveness better than their current?
                         ClaimUtils.ClaimBedIfPossible(pawn, bed))
                     {
-                        Log.Message("[BedAssign] " + pawn.LabelShort + " claimed an empty bed in a more impressive room.");
+                        Log.Message("[BedAssign] " + pawn.LabelShort + " claimed an empty bed in a more impressive room");
                         return;
                     }
                 }

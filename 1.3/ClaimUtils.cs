@@ -77,7 +77,7 @@ namespace BedAssign
             if (bed.CompAssignableToPawn.IdeoligionForbids(pawn)) { Log.Message($"[BedAssign] ClaimBedIfPossible failed: {pawn.LabelShort}'s ideology forbids him from being assigned to {bed.LabelShort}"); return false; }
 
             try { MakeSpaceInBed(pawn, bed, pawnLoverToMakeSpaceWith); } catch { }
-            if (bed.OwnersForReading.Count < bed.TotalSleepingSlots)
+            if (bed.AnyUnownedSleepingSlot)
             {
                 Log.Message("[BedAssign] ClaimBedIfPossible succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);
                 pawn.ownership.ClaimBedIfNonMedical(bed);

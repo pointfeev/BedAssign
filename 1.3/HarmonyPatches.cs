@@ -39,7 +39,14 @@ namespace BedAssign
 
         public static void GizmoPostfix(ref IEnumerable<Gizmo> __result, Building_Bed __instance)
         {
-            __result = BedGizmoUtils.CreateBedGizmos(__instance, __result.ToList());
+            try
+            {
+                __result = BedGizmoUtils.CreateBedGizmos(__instance, __result);
+            }
+            catch (Exception e)
+            {
+                Log.Error("[BedAssign] CreateBedGizmos experienced an exception: " + e.Message + "\n" + e.StackTrace);
+            }
         }
     }
 }

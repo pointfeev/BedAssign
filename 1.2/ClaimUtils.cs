@@ -74,7 +74,7 @@ namespace BedAssign
             if (!forced) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + bed.LabelShort + " is not " + pawn.LabelShort + "'s forced bed"); return false; }
 
             try { MakeSpaceInBed(pawn, bed, pawnLoverToMakeSpaceWith); } catch { }
-            if (bed.OwnersForReading.Count < bed.SleepingSlotsCount)
+            if (bed.AnyUnownedSleepingSlot)
             {
                 Log.Message("[BedAssign] ClaimBedIfPossible succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);
                 pawn.ownership.ClaimBedIfNonMedical(bed);

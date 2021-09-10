@@ -1,16 +1,85 @@
 ﻿using RimWorld;
-using System.Collections.Generic;
-using Verse;
-using System.Linq;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Verse;
 
 namespace BedAssign
 {
     public static class BedAssign
     {
-        public static int GetSlotCount(this Building_Bed bed)
+        public static int GetBedSlotCount(this Building_Bed bed)
         {
             return Math.Max(bed.SleepingSlotsCount, bed.TotalSleepingSlots);
+        }
+
+        public static bool IsBedBetter(Building_Bed bed1, Building_Bed bed2)
+        {
+            bool bed1IsBetter = true;
+            bool bed2IsBetter = false;
+
+            if (bed1 is null && !(bed2 is null))
+                return bed2IsBetter;
+            else if (bed2 is null && !(bed1 is null))
+                return bed1IsBetter;
+
+            // Prioritize bedrooms
+            Room room1 = bed1.GetRoom();
+            Room room2 = bed2.GetRoom();
+            if (room1 is null && !(room2 is null))
+                return bed2IsBetter;
+            else if (room2 is null && !(room1 is null))
+                return bed1IsBetter;
+
+            // ... then bedroom impressiveness
+            float impressive1 = room1.GetStat(RoomStatDefOf.Impressiveness);
+            float impressive2 = room2.GetStat(RoomStatDefOf.Impressiveness);
+            if (impressive1 < impressive2)
+                return bed2IsBetter;
+            else if (impressive1 > impressive2)
+                return bed1IsBetter;
+
+            // ... then bed rest effectiveness
+            float effect1 = bed1.GetStatValue(StatDefOf.BedRestEffectiveness);
+            float effect2 = bed2.GetStatValue(StatDefOf.BedRestEffectiveness);
+            if (effect1 < effect2)
+                return bed2IsBetter;
+            else if (effect1 > effect2)
+                return bed1IsBetter;
+
+            // ... then bed comfort
+            float comfort1 = bed1.GetStatValue(StatDefOf.Comfort);
+            float comfort2 = bed2.GetStatValue(StatDefOf.Comfort);
+            if (comfort1 < comfort2)
+                return bed2IsBetter;
+            else if (comfort1 > comfort2)
+                return bed1IsBetter;
+
+            // ... then bed beauty
+            float beauty1 = bed1.GetStatValue(StatDefOf.Beauty);
+            float beauty2 = bed2.GetStatValue(StatDefOf.Beauty);
+            if (beauty1 < beauty2)
+                return bed2IsBetter;
+            else if (beauty1 > beauty2)
+                return bed1IsBetter;
+
+            // ... otherwise, use ID numbers to make sure the list is always sorted the same
+            return (bed1.thingIDNumber < bed2.thingIDNumber) ? bed1IsBetter : bed2IsBetter;
+        }
+
+        public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, bool descending = true)
+        {
+            List<Building_Bed> bedsSorted = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
+            if (bedsSorted is null)
+                bedsSorted = new List<Building_Bed>();
+            bedsSorted.RemoveAll(bed => !ClaimUtils.CanBedBeUsed(bed));
+            int bed1IsBetter = descending ? -1 : 1;
+            int bed2IsBetter = descending ? 1 : -1;
+            bedsSorted.Sort(delegate (Building_Bed bed1, Building_Bed bed2)
+            {
+                return IsBedBetter(bed1, bed2) ? bed1IsBetter : bed2IsBetter;
+            });
+            return bedsSorted;
         }
 
         public static void CheckBeds(Pawn pawn)
@@ -38,35 +107,8 @@ namespace BedAssign
 
             if (pawn.Map is null) { return; }
 
-            // Get and sort all beds on the pawn's map in descending order by their room's impressiveness
-            List<Building_Bed> bedsSorted = pawn.Map.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
-            if (bedsSorted is null)
-                bedsSorted = new List<Building_Bed>();
-            bedsSorted.RemoveAll(bed => !bed.def.building.bed_humanlike); // remove all non-humanlike beds since we don't touch animals anyways
-            bedsSorted.Sort(delegate (Building_Bed bed1, Building_Bed bed2)
-            {
-                if (bed1 is null)
-                    return -1;
-                else if (bed2 is null)
-                    return 1;
-
-                Room room1 = bed1.GetRoom();
-                Room room2 = bed2.GetRoom();
-
-                if (room1 is null)
-                    return -1;
-                else if (room2 is null)
-                    return 1;
-
-                float imp1 = room1.GetStat(RoomStatDefOf.Impressiveness);
-                float imp2 = room2.GetStat(RoomStatDefOf.Impressiveness);
-
-                if (imp1 < imp2)
-                    return 1;
-                else if (imp1 > imp2)
-                    return -1;
-                return 0;
-            });
+            // Get and sort all beds on the pawn's map
+            List<Building_Bed> bedsSorted = GetSortedBedsOnPawnsMap(pawn);
 
             // Attempt to avoid the "Want to sleep with partner" moodlet
             Pawn pawnLover = ClaimUtils.GetMostLikedLovePartnerIfPossible(pawn);
@@ -89,7 +131,7 @@ namespace BedAssign
                         // Attempt to claim a bed that has more than one sleeping spot for the lovers
                         foreach (Building_Bed bed in bedsSorted)
                         {
-                            if (!bed.Medical && bed.GetSlotCount() >= 2 &&
+                            if (!bed.Medical && bed.GetBedSlotCount() >= 2 &&
                                 RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def))
                             {
                                 bool canClaim = true;
@@ -143,10 +185,7 @@ namespace BedAssign
                 }
             }
 
-            // Attempt to claim an empty bed in a better (more impressive) room
-            float currentRoomImpressiveness = 0;
-            if (!(currentBed is null) && !(currentBed.GetRoom() is null))
-                currentRoomImpressiveness = currentBed.GetRoom().GetStat(RoomStatDefOf.Impressiveness);
+            // Attempt to claim a better empty bed
             if (!(pawnLover is null))
             {
                 // ... with their lover
@@ -154,11 +193,11 @@ namespace BedAssign
                 {
                     if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
                         RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def) && // can the bed be used by both lovers?
-                        bed.GetSlotCount() >= 2 && // does the bed have slots for both lovers?
-                        !(bed.GetRoom() is null) && bed.GetRoom().GetStat(RoomStatDefOf.Impressiveness) > currentRoomImpressiveness && // is the room's impressiveness better than their current?
+                        bed.GetBedSlotCount() >= 2 && // does the bed have slots for both lovers?
+                        IsBedBetter(bed, currentBed) && // is the bed better than their current?
                         ClaimUtils.ClaimBedIfPossible(pawn, bed) && ClaimUtils.ClaimBedIfPossible(pawnLover, bed))
                     {
-                        Log.Message($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover.LabelShort}, claimed an empty bed in a more impressive room together");
+                        Log.Message($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover.LabelShort}, claimed a better empty bed together");
                         return;
                     }
                     else if (!(currentBed is null)) // undo the change if both partners didn't successfully claim the bed together
@@ -174,10 +213,10 @@ namespace BedAssign
                 {
                     if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
                         RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
-                        !(bed.GetRoom() is null) && bed.GetRoom().GetStat(RoomStatDefOf.Impressiveness) > currentRoomImpressiveness && // is the room's impressiveness better than their current?
+                        IsBedBetter(bed, currentBed) && // is the bed better than their current?
                         ClaimUtils.ClaimBedIfPossible(pawn, bed))
                     {
-                        Log.Message("[BedAssign] " + pawn.LabelShort + " claimed an empty bed in a more impressive room");
+                        Log.Message("[BedAssign] " + pawn.LabelShort + " claimed a better empty bed");
                         return;
                     }
                 }

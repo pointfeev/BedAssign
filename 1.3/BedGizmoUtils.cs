@@ -54,7 +54,7 @@ namespace BedAssign
                 }
             }
 
-            if (forcedPawns.Count < bed.GetSlotCount())
+            if (forcedPawns.Count < bed.GetBedSlotCount())
             {
                 foreach (Pawn pawn in bed.OwnersForReading)
                 {

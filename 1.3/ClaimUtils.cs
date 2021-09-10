@@ -1,5 +1,6 @@
 ﻿using RimWorld;
 using System.Collections.Generic;
+using System.Linq;
 using Verse;
 
 namespace BedAssign
@@ -14,11 +15,22 @@ namespace BedAssign
             return true;
         }
 
+        public static bool IsBedDesignatedDeconstructOrUninstall(Building_Bed bed)
+        {
+            return bed.Map.designationManager.AllDesignationsOn(bed).ToList().Any(designation =>
+                designation.def == DesignationDefOf.Deconstruct || designation.def == DesignationDefOf.Uninstall);
+        }
+
+        public static bool CanBedBeUsed(Building_Bed bed)
+        {
+            return !(bed is null) && !bed.Medical && bed.ForColonists && bed.def.building.bed_humanlike && !IsBedDesignatedDeconstructOrUninstall(bed);
+        }
+
         public static Building_Bed GetForcedPawnBedIfPossible(Pawn pawn)
         {
             if (!CanUsePawn(pawn)) { return null; }
             Building_Bed pawnForcedBed = BedAssignData.ForcedPawnBed.TryGetValue(pawn);
-            if (pawnForcedBed != null && pawn.Map == pawnForcedBed.Map)
+            if (pawnForcedBed != null && pawn.Map == pawnForcedBed.Map && CanBedBeUsed(pawnForcedBed))
             {
                 //Log.Message("[BedAssign] GetForcedPawnBedIfPossible: returned " + pawnForcedBed.LabelShort + " for " + pawn.LabelShort);
                 return pawnForcedBed;
@@ -40,7 +52,7 @@ namespace BedAssign
 
         public static void MakeSpaceInBed(Pawn pawn, Building_Bed bed, Pawn lover)
         {
-            if (!CanUsePawn(pawn) || bed == null || bed.Medical) { return; }
+            if (!CanUsePawn(pawn) || !CanBedBeUsed(bed)) { return; }
             if (!BedUtility.WillingToShareBed(pawn, lover)) { Log.Message($"[BedAssign] MakeSpaceInBed failed: {pawn.LabelShort} and their lover, {lover.LabelShort}, aren't willing to share a bed together"); return; }
             List<Pawn> owners = bed.OwnersForReading;
             if (owners.Count > 0)
@@ -64,14 +76,14 @@ namespace BedAssign
 
         public static bool ClaimBedIfPossible(Pawn pawn, Building_Bed bed, Pawn pawnLoverToMakeSpaceWith = null)
         {
-            if (!CanUsePawn(pawn) || bed == null || bed.Medical) { return false; }
+            if (!CanUsePawn(pawn) || !CanBedBeUsed(bed)) { return false; }
             if (pawn.Map != bed.Map) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort); return false; }
 
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == bed) { /*Log.Message("[BedAssign] ClaimBedIfPossible failed: " + pawn.LabelShort + " already claims " + bed.LabelShort);*/ return false; }
 
             Building_Bed pawnForcedBed = GetForcedPawnBedIfPossible(pawn);
-            bool forced = pawnForcedBed == null || pawnForcedBed == bed;
+            bool forced = pawnForcedBed is null || pawnForcedBed == bed;
             if (!forced) { Log.Message("[BedAssign] ClaimBedIfPossible failed: " + bed.LabelShort + " is not " + pawn.LabelShort + "'s forced bed"); return false; }
 
             if (bed.CompAssignableToPawn.IdeoligionForbids(pawn)) { Log.Message($"[BedAssign] ClaimBedIfPossible failed: {pawn.LabelShort}'s ideology forbids him from being assigned to {bed.LabelShort}"); return false; }

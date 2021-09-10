@@ -1,6 +1,6 @@
 ﻿using RimWorld;
-using Verse;
 using System.Collections.Generic;
+using Verse;
 
 namespace BedAssign
 {
@@ -27,11 +27,11 @@ namespace BedAssign
             base.ExposeData();
 
             Scribe_Collections.Look(ref forcedPawnBed, "ForcedPawnBed", LookMode.Reference, LookMode.Reference);
-			
+
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 _ = ForcedPawnBed;
             }
         }
-	}
+    }
 }

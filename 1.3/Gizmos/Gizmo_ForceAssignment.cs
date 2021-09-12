@@ -30,6 +30,9 @@ namespace BedAssign
             order = GizmoOrder.Special + 2;
         }
 
-        public override bool GroupsWith(Gizmo gizmo) => false;
+        public override bool GroupsWith(Gizmo gizmo)
+        {
+            return false;
+        }
     }
 }

@@ -9,13 +9,19 @@ namespace BedAssign
     {
         public static IEnumerable<Gizmo> AddModGizmos(this Building_Bed bed, IEnumerable<Gizmo> gizmos)
         {
-            if (!bed.CanBeUsedEver()) return gizmos;
+            if (!bed.CanBeUsedEver())
+            {
+                return gizmos;
+            }
 
             List<Gizmo> Gizmos = gizmos.ToList();
 
             Gizmos.Add(new Gizmo_UnusableBed(bed));
 
-            if (!bed.CanBeUsed()) return Gizmos.AsEnumerable();
+            if (!bed.CanBeUsed())
+            {
+                return Gizmos.AsEnumerable();
+            }
 
             List<Pawn> forcedPawns = new List<Pawn>();
             foreach (KeyValuePair<Pawn, Building_Bed> entry in BedAssignData.ForcedBeds.ToList())

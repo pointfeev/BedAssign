@@ -13,7 +13,10 @@ namespace BedAssign
         {
             List<Building_Bed> bedsSorted = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
             if (bedsSorted is null)
+            {
                 bedsSorted = new List<Building_Bed>();
+            }
+
             bedsSorted.RemoveAll(bed => bed is null || !bed.CanBeUsed());
             int bed1IsBetter = descending ? -1 : 1;
             int bed2IsBetter = descending ? 1 : -1;
@@ -50,7 +53,9 @@ namespace BedAssign
             List<Building_Bed> bedsSorted = GetSortedBedsOnPawnsMap(pawn);
             Pawn pawnLover = pawn.GetMostLikedLovePartner();
             if (pawnLover?.GetMostLikedLovePartner() != pawn)
+            {
                 pawnLover = null;
+            }
 
             bool PerformBetterBedSearch(string partnerOutput, string singleOutput, TraitDef forTraitDef = null, Func<Building_Bed, bool> forTraitDefFunc_DoesBedSatisfy = null, TraitDef[] excludedOwnerTraitDefs = null)
             {
@@ -69,16 +74,25 @@ namespace BedAssign
                         {
                             bedUnowned = !bed.OwnersForReading.Any(p => (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
                         }
-                        if (!bedUnowned) continue;
+                        if (!bedUnowned)
+                        {
+                            continue;
+                        }
 
                         bool bedHasOwnerWithExcludedTrait = false;
                         if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
                         {
                             bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
                         }
-                        if (bedHasOwnerWithExcludedTrait) continue;
+                        if (bedHasOwnerWithExcludedTrait)
+                        {
+                            continue;
+                        }
 
-                        if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
+                        if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed))
+                        {
+                            continue;
+                        }
 
                         if (!bed.Medical && RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def) && // can the bed be used?
                             bed.GetBedSlotCount() >= 2 && // does the bed have slots for both lovers?
@@ -103,16 +117,25 @@ namespace BedAssign
                     {
                         bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.HasTrait(forTraitDef));
                     }
-                    if (!bedUnowned) continue;
+                    if (!bedUnowned)
+                    {
+                        continue;
+                    }
 
                     bool bedHasOwnerWithExcludedTrait = false;
                     if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
                     {
                         bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
                     }
-                    if (bedHasOwnerWithExcludedTrait) continue;
+                    if (bedHasOwnerWithExcludedTrait)
+                    {
+                        continue;
+                    }
 
-                    if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
+                    if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed))
+                    {
+                        continue;
+                    }
 
                     if (!bed.Medical && RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
                         bed.IsBetterThan(currentBed) && // is the bed better than their current?

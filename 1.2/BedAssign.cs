@@ -150,7 +150,7 @@ namespace BedAssign
                         }
                     }
                     return true;
-                }))
+                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }))
             {
                 return;
             }
@@ -164,12 +164,12 @@ namespace BedAssign
                 {
                     float impressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
-                    if (greedyThought.def?.stages[stage] != null)
+                    if (!(greedyThought.def?.stages[stage] is null))
                     {
                         return false;
                     }
                     return true;
-                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }))
+                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Greedy }))
             {
                 return;
             }

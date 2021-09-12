@@ -1,5 +1,4 @@
-﻿using BedAssign.Utilities;
-using RimWorld;
+﻿using RimWorld;
 using Verse;
 
 namespace BedAssign

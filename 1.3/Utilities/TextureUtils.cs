@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Verse;
 
-namespace BedAssign.Utilities
+namespace BedAssign
 {
     public static class TextureUtils
     {

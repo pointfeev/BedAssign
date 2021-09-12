@@ -1,5 +1,4 @@
 ﻿using RimWorld;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Verse;
@@ -8,125 +7,150 @@ namespace BedAssign
 {
     public static class BedAssign
     {
-        public static int GetBedSlotCount(this Building_Bed bed)
-        {
-            return Math.Max(bed.SleepingSlotsCount, bed.TotalSleepingSlots);
-        }
-
-        public static bool IsBedBetter(Building_Bed bed1, Building_Bed bed2)
-        {
-            bool bed1IsBetter = true;
-            bool bed2IsBetter = false;
-
-            if (bed1 is null && !(bed2 is null))
-                return bed2IsBetter;
-            else if (bed2 is null && !(bed1 is null))
-                return bed1IsBetter;
-
-            // Prioritize bedrooms
-            Room room1 = bed1.GetRoom();
-            Room room2 = bed2.GetRoom();
-            if (room1 is null && !(room2 is null))
-                return bed2IsBetter;
-            else if (room2 is null && !(room1 is null))
-                return bed1IsBetter;
-
-            // ... then bedroom impressiveness
-            float impressive1 = room1.GetStat(RoomStatDefOf.Impressiveness);
-            float impressive2 = room2.GetStat(RoomStatDefOf.Impressiveness);
-            if (impressive1 < impressive2)
-                return bed2IsBetter;
-            else if (impressive1 > impressive2)
-                return bed1IsBetter;
-
-            // ... then bed rest effectiveness
-            float effect1 = bed1.GetStatValue(StatDefOf.BedRestEffectiveness);
-            float effect2 = bed2.GetStatValue(StatDefOf.BedRestEffectiveness);
-            if (effect1 < effect2)
-                return bed2IsBetter;
-            else if (effect1 > effect2)
-                return bed1IsBetter;
-
-            // ... then bed comfort
-            float comfort1 = bed1.GetStatValue(StatDefOf.Comfort);
-            float comfort2 = bed2.GetStatValue(StatDefOf.Comfort);
-            if (comfort1 < comfort2)
-                return bed2IsBetter;
-            else if (comfort1 > comfort2)
-                return bed1IsBetter;
-
-            // ... then bed beauty
-            float beauty1 = bed1.GetStatValue(StatDefOf.Beauty);
-            float beauty2 = bed2.GetStatValue(StatDefOf.Beauty);
-            if (beauty1 < beauty2)
-                return bed2IsBetter;
-            else if (beauty1 > beauty2)
-                return bed1IsBetter;
-
-            // ... otherwise, use ID numbers to make sure the list is always sorted the same
-            return (bed1.thingIDNumber < bed2.thingIDNumber) ? bed1IsBetter : bed2IsBetter;
-        }
-
         public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, bool descending = true)
         {
             List<Building_Bed> bedsSorted = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
             if (bedsSorted is null)
                 bedsSorted = new List<Building_Bed>();
-            bedsSorted.RemoveAll(bed => !ClaimUtils.CanBedBeUsed(bed));
+            bedsSorted.RemoveAll(bed => bed is null || !bed.CanBeUsed());
             int bed1IsBetter = descending ? -1 : 1;
             int bed2IsBetter = descending ? 1 : -1;
             bedsSorted.Sort(delegate (Building_Bed bed1, Building_Bed bed2)
             {
-                return IsBedBetter(bed1, bed2) ? bed1IsBetter : bed2IsBetter;
+                return bed1.IsBetterThan(bed2) ? bed1IsBetter : bed2IsBetter;
             });
             return bedsSorted;
         }
 
-        public static void CheckBeds(Pawn pawn)
+        public static void LookForBedReassignment(this Pawn pawn)
         {
-            if (!ClaimUtils.CanUsePawn(pawn)) { return; }
+            if (!pawn.CanBeUsed()) { return; }
 
             // Unclaim off-map bed to give space to other colonists
             Building_Bed currentBed = pawn.ownership.OwnedBed;
             if (currentBed != null && pawn.Map != currentBed.Map)
             {
                 pawn.ownership.UnclaimBed();
-                Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed due to being on a different map");
+                Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed due to being off-map");
+                currentBed = null;
             }
 
             // Attempt to claim forced bed
-            Building_Bed forcedBed = ClaimUtils.GetForcedPawnBedIfPossible(pawn);
-            if (forcedBed != null)
+            Building_Bed forcedBed = pawn.GetForcedBed();
+            if (!(forcedBed is null) && pawn.TryClaimBed(forcedBed))
             {
-                if (ClaimUtils.ClaimBedIfPossible(pawn, forcedBed))
-                {
-                    Log.Message("[BedAssign] " + pawn.LabelShort + " claimed their forced bed");
-                    return;
-                }
+                Log.Message("[BedAssign] " + pawn.LabelShort + " claimed their forced bed");
+                return;
             }
 
             if (pawn.Map is null) { return; }
 
-            // Get and sort all beds on the pawn's map
             List<Building_Bed> bedsSorted = GetSortedBedsOnPawnsMap(pawn);
+            Pawn pawnLover = pawn.GetMostLikedLovePartner();
+            if (pawnLover?.GetMostLikedLovePartner() != pawn)
+                pawnLover = null;
 
-            // Attempt to avoid the "Want to sleep with partner" moodlet
-            Pawn pawnLover = ClaimUtils.GetMostLikedLovePartnerIfPossible(pawn);
+            bool PerformBetterBedSearch(string partnerOutput, string singleOutput, TraitDef forTraitDef = null, TraitDef[] excludedOwnerTraitDefs = null)
+            {
+                if (!(forTraitDef is null) && !pawn.story.traits.allTraits.Any(trait => trait.def == forTraitDef))
+                {
+                    return false;
+                }
+                else if (!(pawnLover is null) && BedUtility.WillingToShareBed(pawn, pawnLover))
+                {
+                    // ... with their lover
+                    foreach (Building_Bed bed in bedsSorted)
+                    {
+                        bool bedUnowned = !bed.OwnersForReading.Any();
+                        if (!bedUnowned && !(forTraitDef is null))
+                        {
+                            bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => t.def == forTraitDef));
+                        }
+                        bool bedHasOwnerWithExcludedTrait = false;
+                        if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
+                        {
+                            bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
+                        }
+                        if (!bed.Medical && bedUnowned && !bedHasOwnerWithExcludedTrait && // is the bed unowned?
+                            RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def) && // can the bed be used by both lovers?
+                            bed.GetBedSlotCount() >= 2 && // does the bed have slots for both lovers?
+                            bed.IsBetterThan(currentBed) && // is the bed better than their current?
+                            pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
+                        {
+                            Log.Message(partnerOutput);
+                            return true;
+                        }
+                        else if (!(currentBed is null)) // undo the change if both partners didn't successfully claim the bed together
+                        {
+                            pawn.TryClaimBed(currentBed);
+                        }
+                    }
+                }
+                else
+                {
+                    // ... for themself
+                    foreach (Building_Bed bed in bedsSorted)
+                    {
+                        bool bedUnowned = !bed.OwnersForReading.Any();
+                        if (!bedUnowned && !(forTraitDef is null))
+                        {
+                            bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => t.def == forTraitDef));
+                        }
+                        bool bedHasOwnerWithExcludedTrait = false;
+                        if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
+                        {
+                            bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
+                        }
+                        if (!bed.Medical && bedUnowned && !bedHasOwnerWithExcludedTrait && // is the bed unowned?
+                            RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
+                            bed.IsBetterThan(currentBed) && // is the bed better than their current?
+                            pawn.TryClaimBed(bed))
+                        {
+                            Log.Message(singleOutput);
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            // Attempt to avoid the Jealous mood penalty
+            if (PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Jealous mood penalty",
+                "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Jealous mood penalty", forTraitDef: TraitDefOf.Jealous))
+            {
+                return;
+            }
+
+            // Attempt to avoid the Greedy mood penalty
+            if (PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty",
+                "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty", forTraitDef: TraitDefOf.Greedy))
+            {
+                return;
+            }
+
+            // Attempt to claim a better empty bed
+            if (PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better empty bed together",
+                "[BedAssign] " + pawn.LabelShort + " claimed a better empty bed", excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }))
+            {
+                return;
+            }
+
+            // Attempt to avoid the "Want to sleep with partner" mood penalty
             if (!(pawnLover is null) && BedUtility.WillingToShareBed(pawn, pawnLover))
             {
                 // Attempt to simply claim their lover's bed
                 Building_Bed loverBed = pawnLover.ownership.OwnedBed;
-                if (loverBed != null && !loverBed.Medical && currentBed != loverBed)
+                if (loverBed != null && loverBed.CanBeUsed() && currentBed != loverBed)
                 {
-                    if (loverBed.AnyUnownedSleepingSlot)
+                    if (loverBed.AnyUnownedSleepingSlot && RestUtility.CanUseBedEver(pawn, loverBed.def))
                     {
-                        if (ClaimUtils.ClaimBedIfPossible(pawn, loverBed, pawnLover))
+                        if (pawn.TryClaimBed(loverBed))
                         {
                             Log.Message("[BedAssign] " + pawn.LabelShort + " claimed the bed of their lover, " + pawnLover.LabelShort);
                             return;
                         }
                     }
-                    else if (ClaimUtils.GetMostLikedLovePartnerIfPossible(pawnLover) == pawn)
+                    else
                     {
                         // Attempt to claim a bed that has more than one sleeping spot for the lovers
                         foreach (Building_Bed bed in bedsSorted)
@@ -135,17 +159,18 @@ namespace BedAssign
                                 RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def))
                             {
                                 bool canClaim = true;
-                                List<Pawn> owners = bed.OwnersForReading;
-                                if (owners.Count > 0)
+                                List<Pawn> otherOwners = bed.OwnersForReading.FindAll(p => p != pawn & p != pawnLover);
+                                if (otherOwners.Any())
                                 {
-                                    for (int i = owners.Count - 1; i >= 0; i--)
+                                    for (int i = otherOwners.Count - 1; i >= 0; i--)
                                     {
-                                        Pawn sleeper = owners[i];
-                                        if (ClaimUtils.GetMostLikedLovePartnerIfPossible(sleeper) is null)
+                                        Pawn sleeper = otherOwners[i];
+                                        if (sleeper.GetMostLikedLovePartner() is null)
                                         {
-                                            if (ClaimUtils.UnclaimBedIfPossible(sleeper))
+                                            if (sleeper.TryUnclaimBed())
                                             {
-                                                Log.Message("[BedAssign] Kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make room for " + pawn.LabelShort + " and their lover, " + pawnLover.LabelShort);
+                                                Log.Message("[BedAssign] Kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort + " and their lover, " + pawnLover.LabelShort);
+                                                return;
                                             }
                                             else
                                             {
@@ -160,14 +185,14 @@ namespace BedAssign
                                         }
                                     }
                                 }
-                                if (canClaim && ClaimUtils.ClaimBedIfPossible(pawn, bed) && ClaimUtils.ClaimBedIfPossible(pawnLover, bed))
+                                if (canClaim && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                                 {
                                     Log.Message($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover.LabelShort}, claimed a bed together");
-                                    break;
+                                    return;
                                 }
                                 else if (canClaim && !(currentBed is null)) // undo the change if both partners didn't successfully claim the bed together
                                 {
-                                    ClaimUtils.ClaimBedIfPossible(pawn, currentBed);
+                                    pawn.TryClaimBed(currentBed);
                                 }
                             }
                         }
@@ -175,51 +200,11 @@ namespace BedAssign
                 }
             }
 
-            // Attempt to avoid the "Sharing bed" moodlet
-            if (LovePartnerRelationUtility.GetMostDislikedNonPartnerBedOwner(pawn) != null)
+            // Attempt to avoid the "Sharing bed" mood penalty
+            if (LovePartnerRelationUtility.GetMostDislikedNonPartnerBedOwner(pawn) != null && pawn.TryUnclaimBed())
             {
-                if (ClaimUtils.UnclaimBedIfPossible(pawn))
-                {
-                    Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed to avoid 'Sharing bed' moodlet");
-                    return;
-                }
-            }
-
-            // Attempt to claim a better empty bed
-            if (!(pawnLover is null))
-            {
-                // ... with their lover
-                foreach (Building_Bed bed in bedsSorted)
-                {
-                    if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
-                        RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def) && // can the bed be used by both lovers?
-                        bed.GetBedSlotCount() >= 2 && // does the bed have slots for both lovers?
-                        IsBedBetter(bed, currentBed) && // is the bed better than their current?
-                        ClaimUtils.ClaimBedIfPossible(pawn, bed) && ClaimUtils.ClaimBedIfPossible(pawnLover, bed))
-                    {
-                        Log.Message($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover.LabelShort}, claimed a better empty bed together");
-                        return;
-                    }
-                    else if (!(currentBed is null)) // undo the change if both partners didn't successfully claim the bed together
-                    {
-                        ClaimUtils.ClaimBedIfPossible(pawn, currentBed);
-                    }
-                }
-            }
-            else
-            {
-                // ... for themself
-                foreach (Building_Bed bed in bedsSorted)
-                {
-                    if (!bed.Medical && !bed.OwnersForReading.Any() && // is the bed unowned?
-                        RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
-                        IsBedBetter(bed, currentBed) && // is the bed better than their current?
-                        ClaimUtils.ClaimBedIfPossible(pawn, bed))
-                    {
-                        Log.Message("[BedAssign] " + pawn.LabelShort + " claimed a better empty bed");
-                        return;
-                    }
-                }
+                Log.Message("[BedAssign] " + pawn.LabelShort + " unclaimed their bed to avoid the bed sharing mood penalty");
+                return;
             }
         }
     }

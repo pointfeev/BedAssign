@@ -27,11 +27,11 @@ namespace BedAssign
         {
             try
             {
-                BedAssign.CheckBeds(pawn);
+                pawn.LookForBedReassignment();
             }
             catch (Exception e)
             {
-                Log.Error("[BedAssign] CheckBeds experienced an exception: " + e.Message + "\n" + e.StackTrace);
+                Log.Error("[BedAssign] LookForBedReassignment experienced an exception: " + e.Message + "\n" + e.StackTrace);
             }
             return true;
         }
@@ -40,7 +40,7 @@ namespace BedAssign
         {
             try
             {
-                __result = BedGizmoUtils.CreateBedGizmos(__instance, __result);
+                __result = __instance.AddModGizmos(__result);
             }
             catch (Exception e)
             {

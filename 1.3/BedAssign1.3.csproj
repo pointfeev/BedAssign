@@ -41,10 +41,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BedForceGizmo.cs" />
+    <Compile Include="Gizmos\Gizmo_UnusableBed.cs" />
+    <Compile Include="Gizmos\Gizmo_ForceAssignment.cs" />
     <Compile Include="BedAssignData.cs" />
-    <Compile Include="BedGizmoUtils.cs" />
-    <Compile Include="ClaimUtils.cs" />
+    <Compile Include="Utilities\TextureUtils.cs" />
+    <Compile Include="Utilities\GizmoUtils.cs" />
+    <Compile Include="Utilities\UseUtils.cs" />
+    <Compile Include="Utilities\ClaimUtils.cs" />
+    <Compile Include="ModCompatibility.cs" />
     <Compile Include="HarmonyPatches.cs" />
     <Compile Include="BedAssign.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -58,6 +62,9 @@
     <PackageReference Include="Lib.Harmony">
       <Version>2.1.1</Version>
       <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="RimWorld.CompatUtils">
+      <Version>1.0.4</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

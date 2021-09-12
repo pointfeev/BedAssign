@@ -8,17 +8,31 @@ namespace BedAssign
     {
         public BedAssignData(Game _) { }
 
-        private static Dictionary<Pawn, Building_Bed> forcedPawnBed;
-        public static Dictionary<Pawn, Building_Bed> ForcedPawnBed
+        private static Dictionary<Pawn, Building_Bed> forcedBeds;
+        public static Dictionary<Pawn, Building_Bed> ForcedBeds
         {
             get
             {
-                if (forcedPawnBed is null)
+                if (forcedBeds is null)
                 {
-                    forcedPawnBed = new Dictionary<Pawn, Building_Bed>();
+                    forcedBeds = new Dictionary<Pawn, Building_Bed>();
                 }
-                forcedPawnBed.RemoveAll((KeyValuePair<Pawn, Building_Bed> entry) => entry.Key == null || entry.Value == null);
-                return forcedPawnBed;
+                forcedBeds.RemoveAll((KeyValuePair<Pawn, Building_Bed> entry) => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsed());
+                return forcedBeds;
+            }
+        }
+
+        private static List<Building_Bed> unusableBeds;
+        public static List<Building_Bed> UnusableBeds
+        {
+            get
+            {
+                if (unusableBeds is null)
+                {
+                    unusableBeds = new List<Building_Bed>();
+                }
+                unusableBeds.RemoveAll(bed => !bed.CanBeUsedEver());
+                return unusableBeds;
             }
         }
 
@@ -26,11 +40,13 @@ namespace BedAssign
         {
             base.ExposeData();
 
-            Scribe_Collections.Look(ref forcedPawnBed, "ForcedPawnBed", LookMode.Reference, LookMode.Reference);
+            Scribe_Collections.Look(ref forcedBeds, "ForcedBeds", LookMode.Reference, LookMode.Reference);
+            Scribe_Collections.Look(ref unusableBeds, "UnusableBeds", LookMode.Reference);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                _ = ForcedPawnBed;
+                _ = ForcedBeds;
+                _ = UnusableBeds;
             }
         }
     }

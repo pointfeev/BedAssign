@@ -131,8 +131,8 @@ namespace BedAssign
             pawn.needs?.mood?.thoughts?.GetAllMoodThoughts(thoughts);
 
             // Attempt to avoid the Jealous mood penalty
-            Thought jealousThought = thoughts?.Find(t => t.def.defName == "Jealous");
-            if (jealousThought?.CurStage?.baseMoodEffect > 0 &&
+            Thought jealousThought = thoughts?.Find(t => t.def?.defName == "Jealous");
+            if (jealousThought?.CurStage?.baseMoodEffect < 0 &&
                 PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Jealous mood penalty",
                 "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Jealous mood penalty",
                 forTraitDef: TraitDefOf.Jealous, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
@@ -140,7 +140,7 @@ namespace BedAssign
                     float bedImpressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
                     foreach (Pawn p in pawn.Map.mapPawns?.SpawnedPawnsInFaction(Faction.OfPlayer))
                     {
-                        if (p.HostFaction is null && (p.RaceProps?.Humanlike).GetValueOrDefault(false) && p.ownership != null)
+                        if (p.HostFaction is null && (p.RaceProps?.Humanlike).GetValueOrDefault(false) && !(p.ownership is null))
                         {
                             float pImpressiveness = (p.ownership?.OwnedRoom?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
                             if (pImpressiveness - bedImpressiveness >= Mathf.Abs(bedImpressiveness * 0.1f))
@@ -156,8 +156,8 @@ namespace BedAssign
             }
 
             // Attempt to avoid the Greedy mood penalty
-            Thought greedyThought = thoughts?.Find(t => t.def.defName == "Greedy");
-            if (greedyThought?.CurStage?.baseMoodEffect > 0 &&
+            Thought greedyThought = thoughts?.Find(t => t.def?.defName == "Greedy");
+            if (greedyThought?.CurStage?.baseMoodEffect < 0 &&
                 PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty",
                 "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty",
                 forTraitDef: TraitDefOf.Greedy, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
@@ -169,7 +169,7 @@ namespace BedAssign
                         return false;
                     }
                     return true;
-                }))
+                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }))
             {
                 return;
             }

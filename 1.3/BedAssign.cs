@@ -1,6 +1,8 @@
 ﻿using RimWorld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using Verse;
 
 namespace BedAssign
@@ -21,6 +23,9 @@ namespace BedAssign
             });
             return bedsSorted;
         }
+
+        private static ThoughtWorker_BedroomJealous workerJealous = new ThoughtWorker_BedroomJealous();
+        private static ThoughtWorker_Greedy workerGreedy = new ThoughtWorker_Greedy();
 
         public static void LookForBedReassignment(this Pawn pawn)
         {
@@ -50,9 +55,9 @@ namespace BedAssign
             if (pawnLover?.GetMostLikedLovePartner() != pawn)
                 pawnLover = null;
 
-            bool PerformBetterBedSearch(string partnerOutput, string singleOutput, TraitDef forTraitDef = null, TraitDef[] excludedOwnerTraitDefs = null)
+            bool PerformBetterBedSearch(string partnerOutput, string singleOutput, TraitDef forTraitDef = null, Func<Building_Bed, bool> forTraitDefFunc_DoesBedSatisfy = null, TraitDef[] excludedOwnerTraitDefs = null)
             {
-                if (!(forTraitDef is null) && !pawn.story.traits.allTraits.Any(trait => trait.def == forTraitDef))
+                if (!(forTraitDef is null) && !pawn.story.traits.HasTrait(forTraitDef))
                 {
                     return false;
                 }
@@ -64,15 +69,20 @@ namespace BedAssign
                         bool bedUnowned = !bed.OwnersForReading.Any();
                         if (!bedUnowned && !(forTraitDef is null))
                         {
-                            bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => t.def == forTraitDef));
+                            bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.HasTrait(forTraitDef));
                         }
+                        if (!bedUnowned) continue;
+
                         bool bedHasOwnerWithExcludedTrait = false;
                         if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
                         {
                             bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
                         }
-                        if (!bed.Medical && bedUnowned && !bedHasOwnerWithExcludedTrait && // is the bed unowned?
-                            RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def) && // can the bed be used by both lovers?
+                        if (bedHasOwnerWithExcludedTrait) continue;
+
+                        if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
+
+                        if (!bed.Medical && RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def) && // can the bed be used?
                             bed.GetBedSlotCount() >= 2 && // does the bed have slots for both lovers?
                             bed.IsBetterThan(currentBed) && // is the bed better than their current?
                             pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
@@ -94,15 +104,20 @@ namespace BedAssign
                         bool bedUnowned = !bed.OwnersForReading.Any();
                         if (!bedUnowned && !(forTraitDef is null))
                         {
-                            bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => t.def == forTraitDef));
+                            bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.HasTrait(forTraitDef));
                         }
+                        if (!bedUnowned) continue;
+
                         bool bedHasOwnerWithExcludedTrait = false;
                         if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
                         {
                             bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
                         }
-                        if (!bed.Medical && bedUnowned && !bedHasOwnerWithExcludedTrait && // is the bed unowned?
-                            RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
+                        if (bedHasOwnerWithExcludedTrait) continue;
+
+                        if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
+
+                        if (!bed.Medical && RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
                             bed.IsBetterThan(currentBed) && // is the bed better than their current?
                             pawn.TryClaimBed(bed))
                         {
@@ -115,15 +130,43 @@ namespace BedAssign
             }
 
             // Attempt to avoid the Jealous mood penalty
-            if (PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Jealous mood penalty",
-                "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Jealous mood penalty", forTraitDef: TraitDefOf.Jealous))
+            if (workerJealous.CurrentState(pawn).Active &&
+                PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Jealous mood penalty",
+                "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Jealous mood penalty",
+                forTraitDef: TraitDefOf.Jealous, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
+                {
+                    float bedImpressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
+                    foreach (Pawn p in pawn.Map.mapPawns.SpawnedPawnsInFaction(Faction.OfPlayer))
+                    {
+                        if (p.HostFaction is null && p.RaceProps.Humanlike && p.ownership != null)
+                        {
+                            float pImpressiveness = (p.ownership?.OwnedRoom?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
+                            if (pImpressiveness - bedImpressiveness >= Mathf.Abs(bedImpressiveness * 0.1f))
+                            {
+                                return false;
+                            }
+                         }
+                    }
+                    return true;
+                }))
             {
                 return;
             }
 
             // Attempt to avoid the Greedy mood penalty
-            if (PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty",
-                "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty", forTraitDef: TraitDefOf.Greedy))
+            if (workerGreedy.CurrentState(pawn).Active &&
+                PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty",
+                "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty",
+                forTraitDef: TraitDefOf.Greedy, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
+                {
+                    float impressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
+                    int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
+                    if (workerGreedy.def.stages[stage] != null)
+                    {
+                        return false;
+                    }
+                    return true;
+                }))
             {
                 return;
             }

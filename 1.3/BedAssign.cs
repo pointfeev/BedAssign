@@ -24,9 +24,6 @@ namespace BedAssign
             return bedsSorted;
         }
 
-        private static ThoughtWorker_BedroomJealous workerJealous = new ThoughtWorker_BedroomJealous();
-        private static ThoughtWorker_Greedy workerGreedy = new ThoughtWorker_Greedy();
-
         public static void LookForBedReassignment(this Pawn pawn)
         {
             if (!pawn.CanBeUsed()) { return; }
@@ -57,26 +54,27 @@ namespace BedAssign
 
             bool PerformBetterBedSearch(string partnerOutput, string singleOutput, TraitDef forTraitDef = null, Func<Building_Bed, bool> forTraitDefFunc_DoesBedSatisfy = null, TraitDef[] excludedOwnerTraitDefs = null)
             {
-                if (!(forTraitDef is null) && !pawn.story.traits.HasTrait(forTraitDef))
+                if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false))
                 {
                     return false;
                 }
-                else if (!(pawnLover is null) && BedUtility.WillingToShareBed(pawn, pawnLover))
+
+                // ... with their lover
+                if (!(pawnLover is null) && BedUtility.WillingToShareBed(pawn, pawnLover))
                 {
-                    // ... with their lover
                     foreach (Building_Bed bed in bedsSorted)
                     {
                         bool bedUnowned = !bed.OwnersForReading.Any();
                         if (!bedUnowned && !(forTraitDef is null))
                         {
-                            bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.HasTrait(forTraitDef));
+                            bedUnowned = !bed.OwnersForReading.Any(p => (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
                         }
                         if (!bedUnowned) continue;
 
                         bool bedHasOwnerWithExcludedTrait = false;
                         if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
                         {
-                            bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
+                            bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
                         }
                         if (bedHasOwnerWithExcludedTrait) continue;
 
@@ -96,56 +94,60 @@ namespace BedAssign
                         }
                     }
                 }
-                else
+
+                // ... for themself
+                foreach (Building_Bed bed in bedsSorted)
                 {
-                    // ... for themself
-                    foreach (Building_Bed bed in bedsSorted)
+                    bool bedUnowned = !bed.OwnersForReading.Any();
+                    if (!bedUnowned && !(forTraitDef is null))
                     {
-                        bool bedUnowned = !bed.OwnersForReading.Any();
-                        if (!bedUnowned && !(forTraitDef is null))
-                        {
-                            bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.HasTrait(forTraitDef));
-                        }
-                        if (!bedUnowned) continue;
+                        bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.HasTrait(forTraitDef));
+                    }
+                    if (!bedUnowned) continue;
 
-                        bool bedHasOwnerWithExcludedTrait = false;
-                        if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
-                        {
-                            bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
-                        }
-                        if (bedHasOwnerWithExcludedTrait) continue;
+                    bool bedHasOwnerWithExcludedTrait = false;
+                    if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
+                    {
+                        bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
+                    }
+                    if (bedHasOwnerWithExcludedTrait) continue;
 
-                        if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
+                    if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
 
-                        if (!bed.Medical && RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
-                            bed.IsBetterThan(currentBed) && // is the bed better than their current?
-                            pawn.TryClaimBed(bed))
-                        {
-                            Log.Message(singleOutput);
-                            return true;
-                        }
+                    if (!bed.Medical && RestUtility.CanUseBedEver(pawn, bed.def) && // can the bed be used?
+                        bed.IsBetterThan(currentBed) && // is the bed better than their current?
+                        pawn.TryClaimBed(bed))
+                    {
+                        Log.Message(singleOutput);
+                        return true;
                     }
                 }
+
                 return false;
             }
 
+            // Get all of the pawn's mood-related thoughts
+            List<Thought> thoughts = new List<Thought>();
+            pawn.needs?.mood?.thoughts?.GetAllMoodThoughts(thoughts);
+
             // Attempt to avoid the Jealous mood penalty
-            if (workerJealous.CurrentState(pawn).Active &&
+            Thought jealousThought = thoughts?.Find(t => t.def.defName == "Jealous");
+            if (jealousThought?.CurStage?.baseMoodEffect > 0 &&
                 PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Jealous mood penalty",
                 "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Jealous mood penalty",
                 forTraitDef: TraitDefOf.Jealous, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
                 {
                     float bedImpressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
-                    foreach (Pawn p in pawn.Map.mapPawns.SpawnedPawnsInFaction(Faction.OfPlayer))
+                    foreach (Pawn p in pawn.Map.mapPawns?.SpawnedPawnsInFaction(Faction.OfPlayer))
                     {
-                        if (p.HostFaction is null && p.RaceProps.Humanlike && p.ownership != null)
+                        if (p.HostFaction is null && (p.RaceProps?.Humanlike).GetValueOrDefault(false) && p.ownership != null)
                         {
                             float pImpressiveness = (p.ownership?.OwnedRoom?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
                             if (pImpressiveness - bedImpressiveness >= Mathf.Abs(bedImpressiveness * 0.1f))
                             {
                                 return false;
                             }
-                         }
+                        }
                     }
                     return true;
                 }))
@@ -154,14 +156,15 @@ namespace BedAssign
             }
 
             // Attempt to avoid the Greedy mood penalty
-            if (workerGreedy.CurrentState(pawn).Active &&
+            Thought greedyThought = thoughts?.Find(t => t.def.defName == "Greedy");
+            if (greedyThought?.CurStage?.baseMoodEffect > 0 &&
                 PerformBetterBedSearch($"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty",
                 "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty",
                 forTraitDef: TraitDefOf.Greedy, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
                 {
                     float impressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
-                    if (workerGreedy.def.stages[stage] != null)
+                    if (greedyThought.def?.stages[stage] != null)
                     {
                         return false;
                     }

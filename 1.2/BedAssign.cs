@@ -163,7 +163,8 @@ namespace BedAssign
 
             // Attempt to avoid the Jealous mood penalty
             Thought jealousThought = thoughts?.Find(t => t.def?.defName == "Jealous");
-            if (jealousThought?.CurStage?.baseMoodEffect < 0 &&
+            float currentBaseMoodEffect = (jealousThought?.CurStage?.baseMoodEffect).GetValueOrDefault(0);
+            if (currentBaseMoodEffect < 0 &&
                 PerformBetterBedSearch(bedsDescending, $"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Jealous mood penalty",
                 "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Jealous mood penalty",
                 forTraitDef: TraitDefOf.Jealous, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
@@ -188,18 +189,16 @@ namespace BedAssign
 
             // Attempt to avoid the Greedy mood penalty
             Thought greedyThought = thoughts?.Find(t => t.def?.defName == "Greedy");
-            if (greedyThought?.CurStage?.baseMoodEffect < 0 &&
+            currentBaseMoodEffect = (greedyThought?.CurStage?.baseMoodEffect).GetValueOrDefault(0);
+            if (currentBaseMoodEffect < 0 &&
                 PerformBetterBedSearch(bedsDescending, $"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty",
                 "[BedAssign] " + pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty",
                 forTraitDef: TraitDefOf.Greedy, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
                 {
                     float impressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
-                    if (!(greedyThought.def?.stages[stage] is null))
-                    {
-                        return false;
-                    }
-                    return true;
+                    float? bedBaseMoodEffect = greedyThought.def?.stages?[stage]?.baseMoodEffect;
+                    return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
                 }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Greedy }))
             {
                 return;
@@ -207,18 +206,16 @@ namespace BedAssign
 
             // Attempt to avoid the Ascetic mood penalty
             Thought asceticThought = thoughts?.Find(t => t.def?.defName == "Ascetic");
-            if (asceticThought?.CurStage?.baseMoodEffect < 0 && (pawnLover is null || !(thoughtsLover?.Find(t => t.def?.defName == "Ascetic") is null)) &&
+            currentBaseMoodEffect = (asceticThought?.CurStage?.baseMoodEffect).GetValueOrDefault(0);
+            if (currentBaseMoodEffect < 0 && (pawnLover is null || !(thoughtsLover?.Find(t => t.def?.defName == "Ascetic") is null)) &&
                 PerformBetterBedSearch(bedsAscending, $"[BedAssign] Lovers, {pawn.LabelShort} and {pawnLover?.LabelShort}, claimed a worse bed together so they could both avoid the Ascetic mood penalty",
                 "[BedAssign] " + pawn.LabelShort + " claimed a worse bed to avoid the Ascetic mood penalty",
                 forTraitDef: TraitDefOf.Ascetic, forTraitDefFunc_DoesBedSatisfy: delegate (Building_Bed bed)
                 {
                     float impressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
-                    if (!(asceticThought.def?.stages[stage] is null))
-                    {
-                        return false;
-                    }
-                    return true;
+                    float? bedBaseMoodEffect = asceticThought.def?.stages?[stage]?.baseMoodEffect;
+                    return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
                 }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }))
             {
                 return;

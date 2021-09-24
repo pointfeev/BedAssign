@@ -39,7 +39,7 @@ namespace BedAssign
                 for (int i = otherOwners.Count - 1; i >= 0; i--)
                 {
                     Pawn sleeper = otherOwners[i];
-                    if (!LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper) && sleeper.TryUnclaimBed())
+                    if (!LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper))
                     {
                         Log.Message("[BedAssign] MakeSpaceFor: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort);
                     }
@@ -47,7 +47,7 @@ namespace BedAssign
             }
         }
 
-        public static bool TryClaimBed(this Pawn pawn, Building_Bed bed, Pawn pawnLoverToMakeSpaceWith = null)
+        public static bool TryClaimBed(this Pawn pawn, Building_Bed bed)
         {
             if (!pawn.CanBeUsed() || !bed.CanBeUsed()) { return false; }
             if (pawn.Map != bed.Map) { Log.Message("[BedAssign] TryClaimBed failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort); return false; }
@@ -64,13 +64,11 @@ namespace BedAssign
             bed.TryMakeSpaceFor(pawn);
             if (bed.AnyUnownedSleepingSlot)
             {
-                if (pawn.ownership.ClaimBedIfNonMedical(bed))
-                {
-                    Log.Message("[BedAssign] TryClaimBed succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);
-                    return true;
-                }
+                pawn.ownership.ClaimBedIfNonMedical(bed);
+                Log.Message("[BedAssign] TryClaimBed succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);
+                return true;
             }
-            Log.Message("[BedAssign] TryClaimBed failed: unable to make space for " + pawn.LabelShort + " in " + bed.LabelShort);
+            Log.Message("[BedAssign] TryClaimBed failed: unable to make room for " + pawn.LabelShort + " in " + bed.LabelShort);
             return false;
         }
 

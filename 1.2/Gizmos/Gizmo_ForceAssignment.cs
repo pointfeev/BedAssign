@@ -8,6 +8,7 @@ namespace BedAssign
     {
         public Building_Bed bed = null;
         public Pawn pawn = null;
+
         public Gizmo_ForceAssignment(Building_Bed bed, Pawn pawn) : base()
         {
             this.bed = bed;

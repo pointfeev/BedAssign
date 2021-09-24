@@ -57,7 +57,7 @@ namespace BedAssign
                 pawnLover = null;
             }
 
-            bool PerformBetterBedSearch(List<Building_Bed> bedsSorted, string partnerOutput, string singleOutput, TraitDef forTraitDef = null, Func<Building_Bed, bool> forTraitDefFunc_DoesBedSatisfy = null, TraitDef[] excludedOwnerTraitDefs = null)
+            bool PerformBetterBedSearch(List<Building_Bed> bedsSorted, string partnerOutput, string singleOutput, bool canIgnoreLover = false, TraitDef forTraitDef = null, Func<Building_Bed, bool> forTraitDefFunc_DoesBedSatisfy = null, TraitDef[] excludedOwnerTraitDefs = null)
             {
                 if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false))
                 {
@@ -106,6 +106,10 @@ namespace BedAssign
                         {
                             pawn.TryClaimBed(currentBed);
                         }
+                    }
+                    if (!canIgnoreLover)
+                    {
+                        return false;
                     }
                 }
 
@@ -182,7 +186,7 @@ namespace BedAssign
                         }
                     }
                     return true;
-                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }))
+                }, canIgnoreLover: true, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }))
             {
                 return;
             }
@@ -199,7 +203,7 @@ namespace BedAssign
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
                     float? bedBaseMoodEffect = greedyThought.def?.stages?[stage]?.baseMoodEffect;
                     return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
-                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Greedy }))
+                }, canIgnoreLover: true, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Greedy }))
             {
                 return;
             }
@@ -216,7 +220,7 @@ namespace BedAssign
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
                     float? bedBaseMoodEffect = asceticThought.def?.stages?[stage]?.baseMoodEffect;
                     return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
-                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }))
+                }, canIgnoreLover: true, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }))
             {
                 return;
             }

@@ -6,9 +6,12 @@ namespace BedAssign
 {
     public class BedAssignData : GameComponent
     {
-        public BedAssignData(Game _) { }
+        public BedAssignData(Game _)
+        {
+        }
 
         private static Dictionary<Pawn, Building_Bed> forcedBeds;
+
         public static Dictionary<Pawn, Building_Bed> ForcedBeds
         {
             get
@@ -23,6 +26,7 @@ namespace BedAssign
         }
 
         private static List<Building_Bed> unusableBeds;
+
         public static List<Building_Bed> UnusableBeds
         {
             get

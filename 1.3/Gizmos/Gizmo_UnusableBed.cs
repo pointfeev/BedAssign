@@ -6,6 +6,7 @@ namespace BedAssign
     public class Gizmo_UnusableBed : Command_Toggle
     {
         public Building_Bed bed = null;
+
         public Gizmo_UnusableBed(Building_Bed bed) : base()
         {
             this.bed = bed;

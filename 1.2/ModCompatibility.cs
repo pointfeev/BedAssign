@@ -13,7 +13,7 @@ namespace BedAssign
 
         static ModCompatibility()
         {
-            hospitalityIsGuestBedMethod = Compatibility.GetConsistentMethod("orion.hospitality", "Hospitality.BedUtility", "IsGuestBed", new Type[] {
+            hospitalityIsGuestBedMethod = Compatibility.GetConsistentMethod("Orion.Hospitality", "Hospitality.Utilities.BedUtility", "IsGuestBed", new Type[] {
                 typeof(Building_Bed)
             }, logError: true);
         }

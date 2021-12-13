@@ -60,24 +60,29 @@ namespace BedAssign
             {
                 if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false)) return false;
 
+                bool isBedExcluded(Building_Bed bed)
+                {
+                    bool bedOwned = bed.OwnersForReading.Any();
+                    if (bedOwned && !(forTraitDef is null)) bedOwned = bed.OwnersForReading.Any(p =>
+                        (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
+                    if (bedOwned) return true;
+
+                    bool bedHasOwnerWithExcludedTrait = false;
+                    if (!(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
+                        bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p =>
+                            (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
+                    if (bedHasOwnerWithExcludedTrait) return true;
+
+                    return false;
+                }
+
                 // ... with their lover
                 if (!(pawnLover is null))
                 {
                     foreach (Building_Bed bed in bedsSorted)
                     {
-                        bool bedUnowned = !bed.OwnersForReading.Any();
-                        if (!bedUnowned && !(forTraitDef is null)) bedUnowned = !bed.OwnersForReading.Any(p =>
-                            (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
-                        if (!bedUnowned) continue;
-
-                        bool bedHasOwnerWithExcludedTrait = false;
-                        if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
-                            bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p =>
-                                (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
-                        if (bedHasOwnerWithExcludedTrait) continue;
-
+                        if (isBedExcluded(bed)) continue;
                         if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
-
                         if (bed.GetBedSlotCount() >= 2 && bed.IsBetterThan(currentBed) && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                         {
                             Message(partnerOutput, new LookTargets(new List<Pawn>() { pawn, pawnLover }));
@@ -91,18 +96,8 @@ namespace BedAssign
                 // ... for themself
                 foreach (Building_Bed bed in bedsSorted)
                 {
-                    bool bedUnowned = !bed.OwnersForReading.Any();
-                    if (!bedUnowned && !(forTraitDef is null)) bedUnowned = !bed.OwnersForReading.Any(p => p.story.traits.HasTrait(forTraitDef));
-                    if (!bedUnowned) continue;
-
-                    bool bedHasOwnerWithExcludedTrait = false;
-                    if (!bedUnowned && !(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
-                        bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p =>
-                            p.story.traits.allTraits.Any(t => excludedOwnerTraitDefs.Contains(t.def)));
-                    if (bedHasOwnerWithExcludedTrait) continue;
-
+                    if (isBedExcluded(bed)) continue;
                     if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
-
                     if (bed.IsBetterThan(currentBed) && pawn.TryClaimBed(bed))
                     {
                         Message(singleOutput, new LookTargets(new List<Pawn>() { pawn }));
@@ -158,7 +153,7 @@ namespace BedAssign
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
                     float? bedBaseMoodEffect = greedyThought.def?.stages?[stage]?.baseMoodEffect;
                     return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
-                }, canIgnoreLover: true, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Greedy }))
+                }, canIgnoreLover: true, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }))
                 return;
 
             // Attempt to avoid the Ascetic mood penalty

@@ -91,7 +91,7 @@ namespace BedAssign
                 return false;
             }
 
-            if (bed.GetForcedPawns().Any(forcedPawn => !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, forcedPawn)))
+            if (bed.GetForcedPawns().Any(sleeper => !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper)))
             {
                 //BedAssign.Message("[BedAssign] TryClaimBed failed: " + bed.LabelShort + " has forced pawns that are unable to sleep with " + pawn.LabelShort);
                 return false;

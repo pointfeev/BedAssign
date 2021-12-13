@@ -80,7 +80,7 @@ namespace BedAssign
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == bed)
             {
-                /*Log.Message("[BedAssign] TryClaimBed failed: " + pawn.LabelShort + " already claims " + bed.LabelShort);*/
+                //Log.Message("[BedAssign] TryClaimBed failed: " + pawn.LabelShort + " already claims " + bed.LabelShort);
                 return false;
             }
 
@@ -121,7 +121,7 @@ namespace BedAssign
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == null)
             {
-                /*Log.Message("[BedAssign] TryUnclaimBed failed: " + pawn.LabelShort + " has no bed");*/
+                //Log.Message("[BedAssign] TryUnclaimBed failed: " + pawn.LabelShort + " has no bed");
                 return false;
             }
 

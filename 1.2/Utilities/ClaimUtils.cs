@@ -62,7 +62,7 @@ namespace BedAssign
             }
         }
 
-        public static bool TryClaimBed(this Pawn pawn, Building_Bed bed)
+        public static bool TryClaimBed(this Pawn pawn, Building_Bed bed, bool canMakeSpaceFor = true)
         {
             if (!pawn.CanBeUsed() || !bed.CanBeUsed()) return false;
             if (pawn.Map != bed.Map)
@@ -92,13 +92,13 @@ namespace BedAssign
                 return false;
             }
 
-            if (bed.GetForcedPawns().Any(p => !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, p)))
+            /*if (bed.GetForcedPawns().Any(p => !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, p)))
             {
                 //BedAssign.Message("[BedAssign] TryClaimBed failed: " + bed.LabelShort + " has forced pawns that are unable to sleep with " + pawn.LabelShort);
                 return false;
-            }
+            }*/
 
-            if (!bed.AnyUnownedSleepingSlot) bed.TryMakeSpaceFor(pawn);
+            if (canMakeSpaceFor && !bed.AnyUnownedSleepingSlot) bed.TryMakeSpaceFor(pawn);
             if (bed.AnyUnownedSleepingSlot && pawn.ownership.ClaimBedIfNonMedical(bed))
             {
                 //BedAssign.Message("[BedAssign] TryClaimBed succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);

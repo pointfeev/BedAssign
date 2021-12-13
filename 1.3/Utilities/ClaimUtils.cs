@@ -53,10 +53,9 @@ namespace BedAssign
                 for (int i = otherOwners.Count - 1; i >= 0; i--)
                 {
                     Pawn sleeper = otherOwners[i];
-                    if ((!LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper) || !BedUtility.WillingToShareBed(pawn, sleeper)) && sleeper.TryUnclaimBed())
+                    if (!BedUtility.WillingToShareBed(pawn, sleeper) && sleeper.TryUnclaimBed())
                     {
                         //BedAssign.Message("[BedAssign] MakeSpaceFor: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort);
-                        return;
                     }
                 }
             }
@@ -98,13 +97,13 @@ namespace BedAssign
                 return false;
             }
 
-            /*if (bed.GetForcedPawns().Any(p => !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, p)))
+            if (bed.GetForcedPawns().Any(forcedPawn => !BedUtility.WillingToShareBed(pawn, forcedPawn)))
             {
                 //BedAssign.Message("[BedAssign] TryClaimBed failed: " + bed.LabelShort + " has forced pawns that are unable to sleep with " + pawn.LabelShort);
                 return false;
-            }*/
+            }
 
-            if (canMakeSpaceFor && !bed.AnyUnownedSleepingSlot) bed.TryMakeSpaceFor(pawn);
+            if (canMakeSpaceFor) bed.TryMakeSpaceFor(pawn);
             if (bed.AnyUnownedSleepingSlot && pawn.ownership.ClaimBedIfNonMedical(bed))
             {
                 //BedAssign.Message("[BedAssign] TryClaimBed succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);

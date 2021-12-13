@@ -188,11 +188,11 @@ namespace BedAssign
             {
                 if (pawnLover is null && !(pawnLoverNonMutual is null))
                 {
-                    // Attempt to simply claim their lover's bed
+                    // Attempt to claim their polyamorous lover's bed if there's extra space
                     Building_Bed loverNonMutualBed = pawnLoverNonMutual.ownership.OwnedBed;
                     if (pawn.TryClaimBed(loverNonMutualBed, false))
                     {
-                        Message(pawn.LabelShort + " claimed the bed of their non-mutually-most-liked lover, " + pawnLoverNonMutual.LabelShort + ".", new LookTargets(new List<Pawn>() { pawn, pawnLoverNonMutual }));
+                        Message(pawn.LabelShort + " claimed the bed of their polyamorous lover, " + pawnLoverNonMutual.LabelShort + ".", new LookTargets(new List<Pawn>() { pawn, pawnLoverNonMutual }));
                         return;
                     }
                 }

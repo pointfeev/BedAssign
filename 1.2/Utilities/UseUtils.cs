@@ -1,4 +1,5 @@
 ﻿using RimWorld;
+using System;
 using System.Linq;
 using Verse;
 
@@ -8,7 +9,7 @@ namespace BedAssign
     {
         public static int GetBedSlotCount(this Building_Bed bed)
         {
-            return bed.SleepingSlotsCount;
+            return Math.Max(bed.SleepingSlotsCount, bed.CompAssignableToPawn.MaxAssignedPawnsCount);
         }
 
         public static bool CanBeUsed(this Pawn pawn)

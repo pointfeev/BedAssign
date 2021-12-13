@@ -31,7 +31,7 @@ namespace BedAssign
             }
             catch (Exception e)
             {
-                Log.Error("[BedAssign] LookForBedReassignment experienced an exception: " + e.Message + "\n" + e.StackTrace);
+                BedAssign.Error("[BedAssign] LookForBedReassignment experienced an exception: " + e.Message + "\n" + e.StackTrace);
             }
             return true;
         }
@@ -44,7 +44,7 @@ namespace BedAssign
             }
             catch (Exception e)
             {
-                Log.Error("[BedAssign] CreateBedGizmos experienced an exception: " + e.Message + "\n" + e.StackTrace);
+                BedAssign.Error("[BedAssign] CreateBedGizmos experienced an exception: " + e.Message + "\n" + e.StackTrace);
             }
         }
     }

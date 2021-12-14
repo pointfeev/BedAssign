@@ -16,11 +16,9 @@ namespace BedAssign
         {
             get
             {
-                if (forcedBeds is null)
-                {
-                    forcedBeds = new Dictionary<Pawn, Building_Bed>();
-                }
-                forcedBeds.RemoveAll((KeyValuePair<Pawn, Building_Bed> entry) => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsed());
+                if (forcedBeds is null) forcedBeds = new Dictionary<Pawn, Building_Bed>();
+                //forcedBeds.RemoveAll((KeyValuePair<Pawn, Building_Bed> entry) => entry.Key is null || entry.Value is null);
+                forcedBeds.RemoveAll((KeyValuePair<Pawn, Building_Bed> entry) => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsedEver());
                 return forcedBeds;
             }
         }
@@ -31,10 +29,8 @@ namespace BedAssign
         {
             get
             {
-                if (unusableBeds is null)
-                {
-                    unusableBeds = new List<Building_Bed>();
-                }
+                if (unusableBeds is null) unusableBeds = new List<Building_Bed>();
+                //unusableBeds.RemoveAll(bed => bed is null);
                 unusableBeds.RemoveAll(bed => !bed.CanBeUsedEver());
                 return unusableBeds;
             }

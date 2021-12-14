@@ -9,7 +9,7 @@ namespace BedAssign
 {
     public static class BedAssign
     {
-        public static void Message(string text, LookTargets lookTargets) => Messages.Message(text, lookTargets, MessageTypeDefOf.PositiveEvent, false); //Log.Message(text);
+        public static void Message(string text, LookTargets lookTargets) => Messages.Message(text, lookTargets, MessageTypeDefOf.PositiveEvent); //Log.Message(text);
 
         public static void Error(string text) => Log.Error(text);
 

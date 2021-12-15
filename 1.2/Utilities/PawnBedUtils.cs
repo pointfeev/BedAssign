@@ -122,16 +122,16 @@ namespace BedAssign
             TraitDef[] excludedOwnerTraitDefs = null)
         {
             if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false)) return false;
-
             bool canIgnoreLover = !(forTraitDef is null);
+
             // ... with their lover
             if (!(pawnLover is null))
             {
                 foreach (Building_Bed bed in bedsSorted)
                 {
                     if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs)) continue;
-                    if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
-                    if (bed.GetBedSlotCount() >= 2 && bed.IsBetterThan(currentBed) && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
+                    bool isBedBetter = !(forTraitDefFunc_DoesBedSatisfy is null) && forTraitDefFunc_DoesBedSatisfy.Invoke(bed) || bed.IsBetterThan(currentBed);
+                    if (bed.GetBedSlotCount() >= 2 && isBedBetter && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                     {
                         BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn>() { pawn, pawnLover }));
                         return true;
@@ -145,8 +145,8 @@ namespace BedAssign
             foreach (Building_Bed bed in bedsSorted)
             {
                 if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs)) continue;
-                if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
-                if (bed.IsBetterThan(currentBed) && pawn.TryClaimBed(bed))
+                bool isBedBetter = !(forTraitDefFunc_DoesBedSatisfy is null) && forTraitDefFunc_DoesBedSatisfy.Invoke(bed) || bed.IsBetterThan(currentBed);
+                if (isBedBetter && pawn.TryClaimBed(bed))
                 {
                     BedAssign.Message(singleOutput, new LookTargets(new List<Pawn>() { pawn }));
                     return true;

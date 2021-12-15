@@ -27,6 +27,8 @@ namespace BedAssign
             return bedsSorted;
         }
 
+        private static TraitDef[] mutualLoverBedKickExcludedOwnerTraitDefs = new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy };
+
         public static void LookForBedReassignment(this Pawn pawn)
         {
             if (!pawn.CanBeUsed()) return;
@@ -159,11 +161,13 @@ namespace BedAssign
                                 List<string> bootedPawnNames = new List<string>();
                                 if (otherOwners.Any())
                                 {
+#pragma warning disable CS0162 // Unreachable code detected? I think not. Bad Visual Studio, bad!
                                     for (int i = otherOwners.Count - 1; i >= 0; i--)
+#pragma warning restore CS0162
                                     {
                                         Pawn sleeper = otherOwners[i];
-                                        if (sleeper.FindThought("Jealous") is null && sleeper.FindThought("Greedy") is null &&
-                                            sleeper.GetMostLikedLovePartner() is null && sleeper.TryUnclaimBed())
+                                        bool bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => (p.story?.traits?.allTraits?.Any(t => mutualLoverBedKickExcludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
+                                        if (!bedHasOwnerWithExcludedTrait && sleeper.GetMostLikedLovePartner() is null && sleeper.TryUnclaimBed())
                                         {
                                             bootedPawns.Add(sleeper);
                                             bootedPawnNames.Add(sleeper.LabelShort);

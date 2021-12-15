@@ -8,9 +8,14 @@ namespace BedAssign
 {
     public static class BedAssign
     {
-        public static void Message(string text, LookTargets lookTargets) => Messages.Message(text, lookTargets, MessageTypeDefOf.PositiveEvent); //Log.Message("[BedAssign] " + text);
+        public static void Message(string text, LookTargets lookTargets = null)
+        {
+            //Log.Message("" + text);
+            if (lookTargets is null) Messages.Message(text, MessageTypeDefOf.PositiveEvent);
+            else Messages.Message(text, lookTargets, MessageTypeDefOf.PositiveEvent);
+        }
 
-        public static void Error(string text) => Log.Error("[BedAssign] " + text);
+        public static void Error(string text) => Log.Error("" + text);
 
         public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, bool descending = true)
         {

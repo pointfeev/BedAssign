@@ -16,7 +16,7 @@ namespace BedAssign
                 Building_Bed pawnForcedBed = forcedPair.Value;
                 if (pawnForcedBed == bed && pawn.Map == pawnForcedBed.Map) forcedPawns.Add(pawn);
             }
-            //BedAssign.Message("[BedAssign] GetForcedPawns: returned " + forcedPawns.Count + " pawns for " + bed.LabelShort);
+            //BedAssign.Message("GetForcedPawns: returned " + forcedPawns.Count + " pawns for " + bed.LabelShort);
             return forcedPawns;
         }
 
@@ -26,7 +26,7 @@ namespace BedAssign
             Building_Bed pawnForcedBed = BedAssignData.ForcedBeds.TryGetValue(pawn);
             if (pawnForcedBed != null && pawn.Map == pawnForcedBed.Map && pawnForcedBed.CanBeUsed())
             {
-                //BedAssign.Message("[BedAssign] GetForcedBed: returned " + pawnForcedBed.LabelShort + " for " + pawn.LabelShort);
+                //BedAssign.Message("GetForcedBed: returned " + pawnForcedBed.LabelShort + " for " + pawn.LabelShort);
                 return pawnForcedBed;
             }
             return null;
@@ -38,7 +38,7 @@ namespace BedAssign
             Pawn partner = LovePartnerRelationUtility.ExistingMostLikedLovePartner(pawn, false);
             if (partner != null && pawn.Map == partner.Map)
             {
-                //BedAssign.Message("[BedAssign] GetMostLikedLovePartner: returned " + partner.LabelShort + " for " + pawn.LabelShort);
+                //BedAssign.Message("GetMostLikedLovePartner: returned " + partner.LabelShort + " for " + pawn.LabelShort);
                 return partner;
             }
             return null;
@@ -56,7 +56,7 @@ namespace BedAssign
                     if ((!sleeper.CanBeUsed() || !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper) || !BedUtility.WillingToShareBed(pawn, sleeper))
                         && sleeper.TryUnclaimBed())
                     {
-                        //BedAssign.Message("[BedAssign] MakeSpaceFor: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort);
+                        //BedAssign.Message("MakeSpaceFor: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort);
                     }
                 }
             }
@@ -67,20 +67,20 @@ namespace BedAssign
             if (!pawn.CanBeUsed() || !bed.CanBeUsed()) return false;
             if (pawn.Map != bed.Map)
             {
-                //BedAssign.Message("[BedAssign] TryClaimBed failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort);
+                //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort);
                 return false;
             }
 
             if (bed.Medical || !RestUtility.CanUseBedEver(pawn, bed.def))
             {
-                //BedAssign.Message("[BedAssign] TryClaimBed failed: " + pawn.LabelShort + " can never use " + bed.LabelShort);
+                //BedAssign.Message("TryClaimBed failed: " + pawn.LabelShort + " can never use " + bed.LabelShort);
                 return false;
             }
 
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == bed)
             {
-                //BedAssign.Message("[BedAssign] TryClaimBed succeeded: " + pawn.LabelShort + " already claims " + bed.LabelShort);
+                //BedAssign.Message("TryClaimBed succeeded: " + pawn.LabelShort + " already claims " + bed.LabelShort);
                 return true;
             }
 
@@ -88,29 +88,29 @@ namespace BedAssign
             bool forced = pawnForcedBed is null || pawnForcedBed == bed;
             if (!forced)
             {
-                //BedAssign.Message("[BedAssign] TryClaimBed failed: " + bed.LabelShort + " is not " + pawn.LabelShort + "'s forced bed");
+                //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " is not " + pawn.LabelShort + "'s forced bed");
                 return false;
             }
 
             if (bed.CompAssignableToPawn.IdeoligionForbids(pawn))
             {
-                //BedAssign.Message($"[BedAssign] TryClaimBed failed: {pawn.LabelShort}'s ideology forbids them from being assigned to {bed.LabelShort}");
+                //BedAssign.Message($"TryClaimBed failed: {pawn.LabelShort}'s ideology forbids them from being assigned to {bed.LabelShort}");
                 return false;
             }
 
-            if (bed.GetForcedPawns().Any(sleeper => sleeper.CanBeUsed() && (!LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper) || !BedUtility.WillingToShareBed(pawn, sleeper))))
+            if (bed.GetForcedPawns().Any(sleeper => sleeper != pawn && sleeper.CanBeUsed() && (!LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper) || !BedUtility.WillingToShareBed(pawn, sleeper))))
             {
-                //BedAssign.Message("[BedAssign] TryClaimBed failed: " + bed.LabelShort + " has forced pawns that are unable to sleep with " + pawn.LabelShort);
+                //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " has forced pawns that are unable to sleep with " + pawn.LabelShort);
                 return false;
             }
 
             if (canMakeSpaceFor) bed.TryMakeSpaceFor(pawn);
             if (bed.AnyUnownedSleepingSlot && pawn.ownership.ClaimBedIfNonMedical(bed))
             {
-                //BedAssign.Message("[BedAssign] TryClaimBed succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);
+                //BedAssign.Message("TryClaimBed succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);
                 return true;
             }
-            //BedAssign.Message("[BedAssign] TryClaimBed failed: unable to make room for " + pawn.LabelShort + " in " + bed.LabelShort);
+            //BedAssign.Message("TryClaimBed failed: unable to make room for " + pawn.LabelShort + " in " + bed.LabelShort);
             return false;
         }
 
@@ -121,20 +121,20 @@ namespace BedAssign
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == null)
             {
-                //BedAssign.Message("[BedAssign] TryUnclaimBed failed: " + pawn.LabelShort + " has no bed");
+                //BedAssign.Message("TryUnclaimBed failed: " + pawn.LabelShort + " has no bed");
                 return false;
             }
 
             Building_Bed pawnForcedBed = BedAssignData.ForcedBeds.TryGetValue(pawn);
             if (pawnForcedBed == null || pawnForcedBed != pawnBed || pawnForcedBed.Map != pawn.Map)
             {
-                //BedAssign.Message("[BedAssign] TryUnclaimBed succeeded: " + pawn.LabelShort + " unclaimed " + pawnBed.LabelShort);
+                //BedAssign.Message("TryUnclaimBed succeeded: " + pawn.LabelShort + " unclaimed " + pawnBed.LabelShort);
                 pawn.mindState.lastDisturbanceTick = Find.TickManager.TicksGame;
                 RestUtility.WakeUp(pawn);
                 pawn.ownership.UnclaimBed();
                 return true;
             }
-            //BedAssign.Message("[BedAssign] TryUnclaimBed failed: " + pawn.LabelShort + " can't unclaim forced bed");
+            //BedAssign.Message("TryUnclaimBed failed: " + pawn.LabelShort + " can't unclaim forced bed");
             return false;
         }
     }

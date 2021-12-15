@@ -44,7 +44,7 @@ namespace BedAssign
 
             // Attempt to claim forced bed
             Building_Bed forcedBed = pawn.GetForcedBed();
-            if (!(forcedBed is null) && pawn.TryClaimBed(forcedBed))
+            if (!(forcedBed is null) && currentBed != forcedBed && pawn.TryClaimBed(forcedBed))
             {
                 Message(pawn.LabelShort + " claimed their forced bed.", new LookTargets(new List<Pawn>() { pawn }));
                 return;

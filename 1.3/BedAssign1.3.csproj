@@ -43,7 +43,7 @@
     <Compile Include="BedAssignData.cs" />
     <Compile Include="Utilities\TextureUtils.cs" />
     <Compile Include="Utilities\GizmoUtils.cs" />
-    <Compile Include="Utilities\UseUtils.cs" />
+    <Compile Include="Utilities\PawnBedUtils.cs" />
     <Compile Include="Utilities\ClaimUtils.cs" />
     <Compile Include="ModCompatibility.cs" />
     <Compile Include="HarmonyPatches.cs" />

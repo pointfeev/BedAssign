@@ -1,11 +1,12 @@
 ﻿using RimWorld;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Verse;
 
 namespace BedAssign
 {
-    public static class UseUtils
+    public static class PawnBedUtils
     {
         public static int GetBedSlotCount(this Building_Bed bed)
         {
@@ -113,6 +114,78 @@ namespace BedAssign
 
             // ... otherwise, use ID numbers for consistent sorting
             return (bed1.thingIDNumber < bed2.thingIDNumber) ? bed1IsBetter : bed2IsBetter;
+        }
+
+        public static bool PerformBetterBedSearch(List<Building_Bed> bedsSorted, Building_Bed currentBed,
+            Pawn pawn, Pawn pawnLover, string singleOutput, string partnerOutput,
+            TraitDef forTraitDef = null, Func<Building_Bed, bool> forTraitDefFunc_DoesBedSatisfy = null,
+            TraitDef[] excludedOwnerTraitDefs = null)
+        {
+            if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false)) return false;
+
+            bool canIgnoreLover = !(forTraitDef is null);
+            // ... with their lover
+            if (!(pawnLover is null))
+            {
+                foreach (Building_Bed bed in bedsSorted)
+                {
+                    if (IsBedExcluded(bed, forTraitDef, excludedOwnerTraitDefs)) continue;
+                    if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
+                    if (bed.GetBedSlotCount() >= 2 && bed.IsBetterThan(currentBed) && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
+                    {
+                        BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn>() { pawn, pawnLover }));
+                        return true;
+                    }
+                    else if (!(currentBed is null)) pawn.TryClaimBed(currentBed);
+                }
+                if (!canIgnoreLover) return false;
+            }
+
+            // ... for themself
+            foreach (Building_Bed bed in bedsSorted)
+            {
+                if (IsBedExcluded(bed, forTraitDef, excludedOwnerTraitDefs)) continue;
+                if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
+                if (bed.IsBetterThan(currentBed) && pawn.TryClaimBed(bed))
+                {
+                    BedAssign.Message(singleOutput, new LookTargets(new List<Pawn>() { pawn }));
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsBedExcluded(Building_Bed bed, TraitDef forTraitDef, TraitDef[] excludedOwnerTraitDefs)
+        {
+            bool bedOwned = bed.OwnersForReading.Any();
+            if (bedOwned && !(forTraitDef is null)) bedOwned = bed.OwnersForReading.Any(p => p.CanBeUsed() &&
+                (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
+            if (bedOwned) return true;
+
+            bool bedHasOwnerWithExcludedTrait = false;
+            if (!(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
+                bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.CanBeUsed() &&
+                    (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
+            if (bedHasOwnerWithExcludedTrait) return true;
+
+            return false;
+        }
+
+        public static bool SufferingFromThought(this List<Thought> thoughts, string thoughtDefName, out Thought thought, out float currentBaseMoodEffect)
+        {
+            thought = thoughts.FindThought(thoughtDefName);
+            currentBaseMoodEffect = (thought?.CurStage?.baseMoodEffect).GetValueOrDefault(0);
+            return currentBaseMoodEffect < 0;
+        }
+
+        public static Thought FindThought(this List<Thought> thoughts, string thoughtDefName) => thoughts?.Find(t => t.def?.defName == thoughtDefName);
+
+        public static Thought FindThought(this Pawn pawn, string thoughtDefName)
+        {
+            List<Thought> thoughts = new List<Thought>();
+            pawn.needs?.mood?.thoughts?.GetAllMoodThoughts(thoughts);
+            return thoughts.FindThought(thoughtDefName);
         }
     }
 }

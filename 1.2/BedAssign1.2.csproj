@@ -47,8 +47,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\ClaimUtils.cs" />
     <Compile Include="Utilities\GizmoUtils.cs" />
+    <Compile Include="Utilities\PawnBedUtils.cs" />
     <Compile Include="Utilities\TextureUtils.cs" />
-    <Compile Include="Utilities\UseUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref">

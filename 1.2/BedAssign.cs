@@ -8,9 +8,9 @@ namespace BedAssign
 {
     public static class BedAssign
     {
-        public static void Message(string text, LookTargets lookTargets) => Messages.Message(text, lookTargets, MessageTypeDefOf.PositiveEvent); //Log.Message(text);
+        public static void Message(string text, LookTargets lookTargets) => Messages.Message(text, lookTargets, MessageTypeDefOf.PositiveEvent); //Log.Message("[BedAssign] " + text);
 
-        public static void Error(string text) => Log.Error(text);
+        public static void Error(string text) => Log.Error("[BedAssign] " + text);
 
         public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, bool descending = true)
         {
@@ -44,9 +44,9 @@ namespace BedAssign
 
             // Attempt to claim forced bed
             Building_Bed forcedBed = pawn.GetForcedBed();
-            if (!(forcedBed is null) && currentBed != forcedBed && pawn.TryClaimBed(forcedBed))
+            if (!(forcedBed is null) && pawn.TryClaimBed(forcedBed))
             {
-                Message(pawn.LabelShort + " claimed their forced bed.", new LookTargets(new List<Pawn>() { pawn }));
+                if (currentBed != forcedBed) Message(pawn.LabelShort + " claimed their forced bed.", new LookTargets(new List<Pawn>() { pawn }));
                 return;
             }
 

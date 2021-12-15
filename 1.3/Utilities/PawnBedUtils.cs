@@ -129,7 +129,7 @@ namespace BedAssign
             {
                 foreach (Building_Bed bed in bedsSorted)
                 {
-                    if (IsBedExcluded(bed, forTraitDef, excludedOwnerTraitDefs)) continue;
+                    if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs)) continue;
                     if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
                     if (bed.GetBedSlotCount() >= 2 && bed.IsBetterThan(currentBed) && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                     {
@@ -144,7 +144,7 @@ namespace BedAssign
             // ... for themself
             foreach (Building_Bed bed in bedsSorted)
             {
-                if (IsBedExcluded(bed, forTraitDef, excludedOwnerTraitDefs)) continue;
+                if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs)) continue;
                 if (!(forTraitDefFunc_DoesBedSatisfy is null) && !forTraitDefFunc_DoesBedSatisfy.Invoke(bed)) continue;
                 if (bed.IsBetterThan(currentBed) && pawn.TryClaimBed(bed))
                 {
@@ -156,17 +156,17 @@ namespace BedAssign
             return false;
         }
 
-        private static bool IsBedExcluded(Building_Bed bed, TraitDef forTraitDef, TraitDef[] excludedOwnerTraitDefs)
+        private static bool IsBedExcluded(Building_Bed bed, Pawn pawn, TraitDef forTraitDef, TraitDef[] excludedOwnerTraitDefs)
         {
             bool bedOwned = bed.OwnersForReading.Any();
-            if (bedOwned && !(forTraitDef is null)) bedOwned = bed.OwnersForReading.Any(p => p.CanBeUsed() &&
+            if (bedOwned && !(forTraitDef is null)) bedOwned = bed.OwnersForReading.Any(p => p != pawn && p.CanBeUsed() &&
                 (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
             if (bedOwned) return true;
 
             bool bedHasOwnerWithExcludedTrait = false;
             if (!(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
-                bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p.CanBeUsed() &&
-                    (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
+                bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p != pawn && p.CanBeUsed() &&
+                (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
             if (bedHasOwnerWithExcludedTrait) return true;
 
             return false;

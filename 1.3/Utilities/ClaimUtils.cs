@@ -80,8 +80,8 @@ namespace BedAssign
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == bed)
             {
-                //BedAssign.Message("[BedAssign] TryClaimBed failed: " + pawn.LabelShort + " already claims " + bed.LabelShort);
-                return false;
+                //BedAssign.Message("[BedAssign] TryClaimBed succeeded: " + pawn.LabelShort + " already claims " + bed.LabelShort);
+                return true;
             }
 
             Building_Bed pawnForcedBed = pawn.GetForcedBed();

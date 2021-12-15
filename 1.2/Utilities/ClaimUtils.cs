@@ -80,8 +80,8 @@ namespace BedAssign
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == bed)
             {
-                //BedAssign.Message("[BedAssign] TryClaimBed failed: " + pawn.LabelShort + " already claims " + bed.LabelShort);
-                return false;
+                //BedAssign.Message("[BedAssign] TryClaimBed succeeded: " + pawn.LabelShort + " already claims " + bed.LabelShort);
+                return true;
             }
 
             Building_Bed pawnForcedBed = pawn.GetForcedBed();
@@ -92,7 +92,7 @@ namespace BedAssign
                 return false;
             }
 
-            if (bed.GetForcedPawns().Any(sleeper => sleeper.CanBeUsed() && !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper)))
+            if (bed.GetForcedPawns().Any(sleeper => sleeper.CanBeUsed() && (!LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper))))
             {
                 //BedAssign.Message("[BedAssign] TryClaimBed failed: " + bed.LabelShort + " has forced pawns that are unable to sleep with " + pawn.LabelShort);
                 return false;

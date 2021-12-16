@@ -17,12 +17,15 @@ namespace BedAssign
 
         public static void Error(string text) => Log.Error("" + text);
 
-        public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, bool descending = true)
+        public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, List<Building_Bed> toOnlyBeSorted = null, bool descending = true)
         {
-            List<Building_Bed> bedsSorted = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
-            if (bedsSorted is null) bedsSorted = new List<Building_Bed>();
-
-            bedsSorted.RemoveAll(bed => bed is null || !bed.CanBeUsed());
+            List<Building_Bed> bedsSorted = toOnlyBeSorted;
+            if (bedsSorted is null)
+            {
+                bedsSorted = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
+                if (bedsSorted is null) bedsSorted = new List<Building_Bed>();
+            }
+            bedsSorted.RemoveAll(bed => !bed.CanBeUsed());
             int bed1IsBetter = descending ? -1 : 1;
             int bed2IsBetter = descending ? 1 : -1;
             bedsSorted.Sort(delegate (Building_Bed bed1, Building_Bed bed2)
@@ -64,7 +67,7 @@ namespace BedAssign
 
             // Get all beds on the pawn's map, sorted
             List<Building_Bed> bedsDescending = GetSortedBedsOnPawnsMap(pawn);
-            List<Building_Bed> bedsAscending = GetSortedBedsOnPawnsMap(pawn, false);
+            List<Building_Bed> bedsAscending = GetSortedBedsOnPawnsMap(pawn, toOnlyBeSorted: bedsDescending, descending: false);
 
             // Get all of the pawn's mood-related thoughts
             List<Thought> thoughts = new List<Thought>();
@@ -158,9 +161,10 @@ namespace BedAssign
                         else
                         {
                             // Attempt to claim a bed that has more than one sleeping spot for the mutual lovers
+                            // I don't use PawnBedUtils.PerformBetterBedSearch for this due to its more custom nature
                             foreach (Building_Bed bed in bedsDescending)
                             {
-                                if (!bed.Medical && bed.GetBedSlotCount() >= 2 && RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def))
+                                if (bed.GetBedSlotCount() >= 2 && RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def))
                                 {
                                     bool canClaim = true;
                                     List<Pawn> otherOwners = bed.OwnersForReading.FindAll(p => p != pawn && p != pawnLover && p.CanBeUsed());
@@ -168,9 +172,7 @@ namespace BedAssign
                                     List<string> bootedPawnNames = new List<string>();
                                     if (otherOwners.Any())
                                     {
-#pragma warning disable CS0162 // Unreachable code detected? I think not. Bad Visual Studio, bad!
                                         for (int i = otherOwners.Count - 1; i >= 0; i--)
-#pragma warning restore CS0162
                                         {
                                             Pawn sleeper = otherOwners[i];
                                             bool bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => (p.story?.traits?.allTraits?.Any(t => mutualLoverBedKickExcludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
@@ -178,7 +180,6 @@ namespace BedAssign
                                             {
                                                 bootedPawns.Add(sleeper);
                                                 bootedPawnNames.Add(sleeper.LabelShort);
-                                                return;
                                             }
                                             else
                                             {
@@ -189,7 +190,7 @@ namespace BedAssign
                                     }
                                     if (canClaim && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                                     {
-                                        if (bootedPawns.Any()) Message($"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} kicked {string.Join(", ", bootedPawnNames)} out of their bed so they could claim it together.", new LookTargets(new List<Pawn>() { pawn, pawnLover }.Concat(bootedPawns)));
+                                        if (bootedPawns.Any()) Message($"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} kicked {string.Join(" and ", bootedPawnNames)} out of their bed so they could claim it together.", new LookTargets(new List<Pawn>() { pawn, pawnLover }.Concat(bootedPawns)));
                                         else Message($"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} claimed an empty bed together.", new LookTargets(new List<Pawn>() { pawn, pawnLover }));
                                         return;
                                     }

@@ -10,12 +10,24 @@ namespace BedAssign
     {
         public static void Message(string text, LookTargets lookTargets = null)
         {
-            //Log.Message("" + text);
-            if (lookTargets is null) Messages.Message(text, MessageTypeDefOf.PositiveEvent);
-            else Messages.Message(text, lookTargets, MessageTypeDefOf.PositiveEvent);
+            if (ModSettings.outputReassignmentMessages)
+            {
+                //Log.Message(text);
+                if (lookTargets is null)
+                {
+                    Messages.Message(text, MessageTypeDefOf.PositiveEvent);
+                }
+                else
+                {
+                    Messages.Message(text, lookTargets, MessageTypeDefOf.PositiveEvent);
+                }
+            }
         }
 
-        public static void Error(string text) => Log.Error("" + text);
+        public static void Error(string text)
+        {
+            Log.Error(text);
+        }
 
         public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, List<Building_Bed> toOnlyBeSorted = null, bool descending = true)
         {
@@ -23,7 +35,10 @@ namespace BedAssign
             if (bedsSorted is null)
             {
                 bedsSorted = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
-                if (bedsSorted is null) bedsSorted = new List<Building_Bed>();
+                if (bedsSorted is null)
+                {
+                    bedsSorted = new List<Building_Bed>();
+                }
             }
             bedsSorted.RemoveAll(bed => !bed.CanBeUsed());
             int bed1IsBetter = descending ? -1 : 1;
@@ -35,11 +50,14 @@ namespace BedAssign
             return bedsSorted;
         }
 
-        private static TraitDef[] mutualLoverBedKickExcludedOwnerTraitDefs = new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy };
+        private static readonly TraitDef[] mutualLoverBedKickExcludedOwnerTraitDefs = new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy };
 
         public static void LookForBedReassignment(this Pawn pawn)
         {
-            if (!pawn.CanBeUsed()) return;
+            if (!pawn.CanBeUsed())
+            {
+                return;
+            }
 
             // Unclaim off-map bed to give space to other colonists
             Building_Bed currentBed = pawn.ownership.OwnedBed;
@@ -54,16 +72,26 @@ namespace BedAssign
             Building_Bed forcedBed = pawn.GetForcedBed();
             if (!(forcedBed is null) && pawn.TryClaimBed(forcedBed))
             {
-                if (currentBed != forcedBed) Message(pawn.LabelShort + " claimed their forced bed.", new LookTargets(new List<Pawn>() { pawn }));
+                if (currentBed != forcedBed)
+                {
+                    Message(pawn.LabelShort + " claimed their forced bed.", new LookTargets(new List<Pawn>() { pawn }));
+                }
+
                 return;
             }
 
-            if (pawn.Map is null) return;
+            if (pawn.Map is null)
+            {
+                return;
+            }
 
             // Get the pawn's most liked lover if it's mutual
             Pawn pawnLover = pawn.GetMostLikedLovePartner();
             Pawn pawnLoverNonMutual = pawnLover;
-            if (pawnLover?.GetMostLikedLovePartner() != pawn) pawnLover = null;
+            if (pawnLover?.GetMostLikedLovePartner() != pawn)
+            {
+                pawnLover = null;
+            }
 
             // Get all beds on the pawn's map, sorted
             List<Building_Bed> bedsDescending = GetSortedBedsOnPawnsMap(pawn);
@@ -90,12 +118,17 @@ namespace BedAssign
                         if (p.HostFaction is null && (p.RaceProps?.Humanlike).GetValueOrDefault(false) && !(p.ownership is null))
                         {
                             float pImpressiveness = (p.ownership?.OwnedRoom?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
-                            if (pImpressiveness - bedImpressiveness >= Mathf.Abs(bedImpressiveness * 0.1f)) return false;
+                            if (pImpressiveness - bedImpressiveness >= Mathf.Abs(bedImpressiveness * 0.1f))
+                            {
+                                return false;
+                            }
                         }
                     }
                     return true;
                 }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }))
+            {
                 return;
+            }
 
             // Attempt to avoid the Greedy mood penalty
             if (thoughts.SufferingFromThought("Greedy", out Thought greedyThought, out float currentBaseMoodEffect) &&
@@ -109,7 +142,9 @@ namespace BedAssign
                     float? bedBaseMoodEffect = greedyThought.def?.stages?[stage]?.baseMoodEffect;
                     return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
                 }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }))
+            {
                 return;
+            }
 
             // Attempt to avoid the Ascetic mood penalty
             if (thoughts.SufferingFromThought("Ascetic", out Thought asceticThought, out currentBaseMoodEffect) &&
@@ -124,14 +159,18 @@ namespace BedAssign
                     float? bedBaseMoodEffect = asceticThought.def?.stages?[stage]?.baseMoodEffect;
                     return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
                 }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }))
+            {
                 return;
+            }
 
             // Attempt to claim a better empty bed
             if (PawnBedUtils.PerformBetterBedSearch(bedsDescending, currentBed, pawn, pawnLover,
                 singleOutput: pawn.LabelShort + " claimed a better empty bed.",
                 partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better empty bed together.",
                 excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }))
+            {
                 return;
+            }
 
             // Attempt to avoid the "Want to sleep with partner" mood penalty
             if (thoughts.SufferingFromThought("WantToSleepWithSpouseOrLover", out _, out _) &&
@@ -190,11 +229,21 @@ namespace BedAssign
                                     }
                                     if (canClaim && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                                     {
-                                        if (bootedPawns.Any()) Message($"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} kicked {string.Join(" and ", bootedPawnNames)} out of their bed so they could claim it together.", new LookTargets(new List<Pawn>() { pawn, pawnLover }.Concat(bootedPawns)));
-                                        else Message($"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} claimed an empty bed together.", new LookTargets(new List<Pawn>() { pawn, pawnLover }));
+                                        if (bootedPawns.Any())
+                                        {
+                                            Message($"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} kicked {string.Join(" and ", bootedPawnNames)} out of their bed so they could claim it together.", new LookTargets(new List<Pawn>() { pawn, pawnLover }.Concat(bootedPawns)));
+                                        }
+                                        else
+                                        {
+                                            Message($"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} claimed an empty bed together.", new LookTargets(new List<Pawn>() { pawn, pawnLover }));
+                                        }
+
                                         return;
                                     }
-                                    else if (canClaim && !(currentBed is null)) pawn.TryClaimBed(currentBed);
+                                    else if (canClaim && !(currentBed is null))
+                                    {
+                                        pawn.TryClaimBed(currentBed);
+                                    }
                                 }
                             }
                         }

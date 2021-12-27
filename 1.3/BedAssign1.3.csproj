@@ -38,6 +38,7 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ModSettings.cs" />
     <Compile Include="Gizmos\Gizmo_UnusableBed.cs" />
     <Compile Include="Gizmos\Gizmo_ForceAssignment.cs" />
     <Compile Include="BedAssignData.cs" />

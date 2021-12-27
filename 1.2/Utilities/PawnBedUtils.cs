@@ -121,7 +121,11 @@ namespace BedAssign
             TraitDef forTraitDef = null, Func<Building_Bed, bool> forTraitDefFunc_DoesBedSatisfy = null,
             TraitDef[] excludedOwnerTraitDefs = null)
         {
-            if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false)) return false;
+            if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false))
+            {
+                return false;
+            }
+
             bool canIgnoreLover = !(forTraitDef is null);
 
             // ... with their lover
@@ -129,22 +133,36 @@ namespace BedAssign
             {
                 foreach (Building_Bed bed in bedsSorted)
                 {
-                    if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs)) continue;
+                    if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs))
+                    {
+                        continue;
+                    }
+
                     bool isBedBetter = !(forTraitDefFunc_DoesBedSatisfy is null) && forTraitDefFunc_DoesBedSatisfy.Invoke(bed) || bed.IsBetterThan(currentBed);
                     if (bed.GetBedSlotCount() >= 2 && isBedBetter && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                     {
                         BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn>() { pawn, pawnLover }));
                         return true;
                     }
-                    else if (!(currentBed is null)) pawn.TryClaimBed(currentBed);
+                    else if (!(currentBed is null))
+                    {
+                        pawn.TryClaimBed(currentBed);
+                    }
                 }
-                if (!canIgnoreLover) return false;
+                if (!canIgnoreLover)
+                {
+                    return false;
+                }
             }
 
             // ... for themself
             foreach (Building_Bed bed in bedsSorted)
             {
-                if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs)) continue;
+                if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs))
+                {
+                    continue;
+                }
+
                 bool isBedBetter = !(forTraitDefFunc_DoesBedSatisfy is null) && forTraitDefFunc_DoesBedSatisfy.Invoke(bed) || bed.IsBetterThan(currentBed);
                 if (isBedBetter && pawn.TryClaimBed(bed))
                 {
@@ -159,15 +177,28 @@ namespace BedAssign
         private static bool IsBedExcluded(Building_Bed bed, Pawn pawn, TraitDef forTraitDef, TraitDef[] excludedOwnerTraitDefs)
         {
             bool bedOwned = bed.OwnersForReading.Any();
-            if (bedOwned && !(forTraitDef is null)) bedOwned = bed.OwnersForReading.Any(p => p != pawn && p.CanBeUsed() &&
+            if (bedOwned && !(forTraitDef is null))
+            {
+                bedOwned = bed.OwnersForReading.Any(p => p != pawn && p.CanBeUsed() &&
                 (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
-            if (bedOwned) return true;
+            }
+
+            if (bedOwned)
+            {
+                return true;
+            }
 
             bool bedHasOwnerWithExcludedTrait = false;
             if (!(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
+            {
                 bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => p != pawn && p.CanBeUsed() &&
                 (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
-            if (bedHasOwnerWithExcludedTrait) return true;
+            }
+
+            if (bedHasOwnerWithExcludedTrait)
+            {
+                return true;
+            }
 
             return false;
         }
@@ -179,7 +210,10 @@ namespace BedAssign
             return currentBaseMoodEffect < 0;
         }
 
-        public static Thought FindThought(this List<Thought> thoughts, string thoughtDefName) => thoughts?.Find(t => t.def?.defName == thoughtDefName);
+        public static Thought FindThought(this List<Thought> thoughts, string thoughtDefName)
+        {
+            return thoughts?.Find(t => t.def?.defName == thoughtDefName);
+        }
 
         public static Thought FindThought(this Pawn pawn, string thoughtDefName)
         {

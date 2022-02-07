@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+
 using Verse;
 
 namespace BedAssign
@@ -12,9 +13,6 @@ namespace BedAssign
             return texture2D;
         }
 
-        public static Texture2D AsTexture2D(this Thing thing)
-        {
-            return thing.def.uiIcon;
-        }
+        public static Texture2D AsTexture2D(this Thing thing) => thing.def.uiIcon;
     }
 }

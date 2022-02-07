@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+
 using Verse;
 
 namespace BedAssign
@@ -18,10 +19,7 @@ namespace BedAssign
     {
         readonly ModSettings settings;
 
-        public Mod(ModContentPack content) : base(content)
-        {
-            settings = GetSettings<ModSettings>();
-        }
+        public Mod(ModContentPack content) : base(content) => settings = GetSettings<ModSettings>();
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
@@ -32,9 +30,6 @@ namespace BedAssign
             base.DoSettingsWindowContents(inRect);
         }
 
-        public override string SettingsCategory()
-        {
-            return "Automatic Bed Reassignment";
-        }
+        public override string SettingsCategory() => "Automatic Bed Reassignment";
     }
 }

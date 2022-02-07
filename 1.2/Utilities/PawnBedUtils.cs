@@ -1,42 +1,29 @@
-﻿using RimWorld;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+
+using RimWorld;
+
 using Verse;
 
 namespace BedAssign
 {
     public static class PawnBedUtils
     {
-        public static int GetBedSlotCount(this Building_Bed bed)
-        {
-            return Math.Max(bed.SleepingSlotsCount, bed.CompAssignableToPawn.MaxAssignedPawnsCount);
-        }
+        public static int GetBedSlotCount(this Building_Bed bed) => Math.Max(bed.SleepingSlotsCount, bed.CompAssignableToPawn.MaxAssignedPawnsCount);
 
-        public static bool CanBeUsed(this Pawn pawn)
-        {
-            return !(pawn is null) && !(pawn.ownership is null) &&
+        public static bool CanBeUsed(this Pawn pawn) => !(pawn is null) && !(pawn.ownership is null) &&
                 !(pawn.Faction is null) && pawn.Faction.IsPlayer && pawn.IsFreeColonist &&
                 !(pawn.def is null) && !(pawn.def.race is null) && pawn.def.race.Humanlike;
-        }
 
-        public static bool IsDesignatedDeconstructOrUninstall(this Building building)
-        {
-            return building is null || building.Map is null || building.Map.designationManager is null ||
+        public static bool IsDesignatedDeconstructOrUninstall(this Building building) => building is null || building.Map is null || building.Map.designationManager is null ||
                 building.Map.designationManager.AllDesignationsOn(building).ToList().Any(designation => !(designation is null) &&
                 (designation.def == DesignationDefOf.Deconstruct || designation.def == DesignationDefOf.Uninstall));
-        }
 
-        public static bool CanBeUsed(this Building_Bed bed)
-        {
-            return CanBeUsedEver(bed) && !BedAssignData.UnusableBeds.Contains(bed) && !bed.IsDesignatedDeconstructOrUninstall();
-        }
+        public static bool CanBeUsed(this Building_Bed bed) => CanBeUsedEver(bed) && !BedAssignData.UnusableBeds.Contains(bed) && !bed.IsDesignatedDeconstructOrUninstall();
 
-        public static bool CanBeUsedEver(this Building_Bed bed)
-        {
-            return !(bed is null) && !bed.IsHospitalityGuestBed() &&
+        public static bool CanBeUsedEver(this Building_Bed bed) => !(bed is null) && !bed.IsHospitalityGuestBed() &&
                 !bed.Medical && !bed.ForPrisoners && bed.def.building.bed_humanlike;
-        }
 
         public static bool IsBetterThan(this Building_Bed bed1, Building_Bed bed2)
         {
@@ -210,10 +197,7 @@ namespace BedAssign
             return currentBaseMoodEffect < 0;
         }
 
-        public static Thought FindThought(this List<Thought> thoughts, string thoughtDefName)
-        {
-            return thoughts?.Find(t => t.def?.defName == thoughtDefName);
-        }
+        public static Thought FindThought(this List<Thought> thoughts, string thoughtDefName) => thoughts?.Find(t => t.def?.defName == thoughtDefName);
 
         public static Thought FindThought(this Pawn pawn, string thoughtDefName)
         {

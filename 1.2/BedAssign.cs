@@ -1,7 +1,10 @@
-﻿using RimWorld;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
+
+using RimWorld;
+
 using UnityEngine;
+
 using Verse;
 
 namespace BedAssign
@@ -24,10 +27,7 @@ namespace BedAssign
             }
         }
 
-        public static void Error(string text)
-        {
-            Log.Error(text);
-        }
+        public static void Error(string text) => Log.Error(text);
 
         public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, List<Building_Bed> toOnlyBeSorted = null, bool descending = true)
         {

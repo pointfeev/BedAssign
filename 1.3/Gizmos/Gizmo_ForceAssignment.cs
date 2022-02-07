@@ -1,5 +1,7 @@
 ﻿using RimWorld;
+
 using UnityEngine;
+
 using Verse;
 
 namespace BedAssign
@@ -31,9 +33,6 @@ namespace BedAssign
             order = GizmoOrder.Special + 2;
         }
 
-        public override bool GroupsWith(Gizmo gizmo)
-        {
-            return false;
-        }
+        public override bool GroupsWith(Gizmo gizmo) => false;
     }
 }

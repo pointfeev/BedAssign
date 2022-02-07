@@ -1,7 +1,10 @@
-﻿using HarmonyLib;
-using RimWorld;
-using System;
+﻿using System;
 using System.Collections.Generic;
+
+using HarmonyLib;
+
+using RimWorld;
+
 using Verse;
 
 namespace BedAssign

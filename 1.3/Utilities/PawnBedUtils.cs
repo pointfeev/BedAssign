@@ -88,9 +88,14 @@ namespace BedAssign
                 return false;
 
             bool canIgnoreLover = !(forTraitDef is null);
+
             bool shouldUseSlabBeds = !shouldIgnoreSlabBedPreference
                 && pawn.PrefersSlabBed() && (pawnLover is null || pawnLover.PrefersSlabBed()) // both lovers prefer a slab bed
                 && bedsSorted.Any(bed => bed.IsSlabBed() && !bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs)); // a unexcluded slab bed exists on the map
+
+            bool IsBetter(Building_Bed bed) => !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) // use the custom function if one was supplied
+                || pawn.PrefersSlabBed() && !currentBed.IsSlabBed() && bed.IsSlabBed() // if the pawn prefers slab beds but his current bed isn't one & this bed is
+                || bed.IsBetterThan(currentBed); // default IsBetterThan methods (room impressiveness & bed stats)
 
             // ... with their lover
             if (!(pawnLover is null))
@@ -103,8 +108,7 @@ namespace BedAssign
                     if (bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))
                         continue;
 
-                    bool isBedBetter = !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) || bed.IsBetterThan(currentBed);
-                    if (bed.GetBedSlotCount() >= 2 && isBedBetter && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
+                    if (bed.GetBedSlotCount() >= 2 && IsBetter(bed) && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                     {
                         BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn>() { pawn, pawnLover }));
                         return true;
@@ -125,8 +129,7 @@ namespace BedAssign
                 if (bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))
                     continue;
 
-                bool isBedBetter = !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) || bed.IsBetterThan(currentBed);
-                if (isBedBetter && pawn.TryClaimBed(bed))
+                if (IsBetter(bed) && pawn.TryClaimBed(bed))
                 {
                     BedAssign.Message(singleOutput, new LookTargets(new List<Pawn>() { pawn }));
                     return true;
@@ -142,7 +145,7 @@ namespace BedAssign
                     shouldIgnoreSlabBedPreference: true);
         }
 
-        private static bool IsExcluded(this Building_Bed bed, Pawn pawn, TraitDef forTraitDef, TraitDef[] excludedOwnerTraitDefs)
+        private static bool IsExcluded(this Building_Bed bed, Pawn pawn, TraitDef forTraitDef = null, TraitDef[] excludedOwnerTraitDefs = null)
         {
             bool bedOwned = bed.OwnersForReading.Any();
             if (bedOwned && !(forTraitDef is null))

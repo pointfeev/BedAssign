@@ -35,7 +35,7 @@ namespace BedAssign
             else if (bed2 is null && !(bed1 is null))
                 return bed1IsBetter;
 
-            // .. then beds with rooms
+            // Prioritize beds with rooms
             Room room1 = bed1.GetRoom();
             Room room2 = bed2.GetRoom();
             if (room1 is null && !(room2 is null))

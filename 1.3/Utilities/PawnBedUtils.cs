@@ -164,7 +164,8 @@ namespace BedAssign
             if (bedOwned && !(forTraitDef is null))
             {
                 bedOwned = bedOwners.Any(p => p != pawn && p.CanBeUsed()
-                    && (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
+                    && (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false)
+                    && (!bed.IsSlabBed() || !pawn.PrefersSlabBed() || p.PrefersSlabBed())); // so pawns who prefer slab beds can kick out pawns that don't
             }
             if (bedOwned) return true;
 
@@ -172,18 +173,10 @@ namespace BedAssign
             if (!(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
             {
                 bedHasOwnerWithExcludedTrait = bedOwners.Any(p => p != pawn && p.CanBeUsed()
-                    && (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
+                    && (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false)
+                    && (!bed.IsSlabBed() || !pawn.PrefersSlabBed() || p.PrefersSlabBed())); // so pawns who prefer slab beds can kick out pawns that don't
             }
-            if (bedHasOwnerWithExcludedTrait) return true;
-
-            if (bed.IsSlabBed() && pawn.PrefersSlabBed())
-            {
-                bool bedHasOwnerWhoPrefersSlabBeds = false;
-                bedHasOwnerWhoPrefersSlabBeds = bedOwners.Any(p => p != pawn && p.CanBeUsed() && p.PrefersSlabBed());
-                if (bedHasOwnerWhoPrefersSlabBeds) return true;
-            }
-
-            return false;
+            return bedHasOwnerWithExcludedTrait;
         }
 
         public static bool SufferingFromThought(this List<Thought> thoughts, string thoughtDefName, out Thought thought, out float currentBaseMoodEffect)

@@ -94,7 +94,7 @@ namespace BedAssign
                 && bedsSorted.Any(bed => bed.IsSlabBed() && !bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs)); // a unexcluded slab bed exists on the map
 
             bool IsBetter(Building_Bed bed) => !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) // use the custom function if one was supplied
-                || shouldUseSlabBeds && !currentBed.IsSlabBed() && bed.IsSlabBed() // if the pawn should use slab beds, but his current bed isn't one, and this bed is
+                || shouldUseSlabBeds && (currentBed is null || !currentBed.IsSlabBed()) && bed.IsSlabBed() // if the pawn should use slab beds, but his current bed isn't one, and this bed is
                 || bed.IsBetterThan(currentBed); // default IsBetterThan methods (room impressiveness & bed stats)
 
             // ... with their lover

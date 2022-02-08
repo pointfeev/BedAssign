@@ -34,7 +34,7 @@ namespace BedAssign
             bedsSorted.RemoveAll(bed => !bed.CanBeUsed());
             int bed1IsBetter = descending ? -1 : 1;
             int bed2IsBetter = descending ? 1 : -1;
-            bedsSorted.Sort((bed1, bed2) => bed1.IsBetterThan(bed2, true) ? bed1IsBetter : bed2IsBetter);
+            bedsSorted.Sort((bed1, bed2) => bed1.IsBetterThan(bed2, useThingID: true) ? bed1IsBetter : bed2IsBetter);
             return bedsSorted;
         }
 

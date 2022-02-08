@@ -100,7 +100,7 @@ namespace BedAssign
                         }
                     }
                     return true;
-                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }, canRetryIgnoringSlabBedPreference: true))
+                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }))
                 return;
 
             // Attempt to avoid the Greedy mood penalty
@@ -114,7 +114,7 @@ namespace BedAssign
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
                     float? bedBaseMoodEffect = greedyThought.def?.stages?[stage]?.baseMoodEffect;
                     return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
-                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }, canRetryIgnoringSlabBedPreference: true))
+                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }))
                 return;
 
             // Attempt to avoid the Ascetic mood penalty
@@ -129,7 +129,7 @@ namespace BedAssign
                     int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
                     float? bedBaseMoodEffect = asceticThought.def?.stages?[stage]?.baseMoodEffect;
                     return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
-                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }, canRetryIgnoringSlabBedPreference: true))
+                }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }))
                 return;
 
             // Attempt to claim a better empty bed

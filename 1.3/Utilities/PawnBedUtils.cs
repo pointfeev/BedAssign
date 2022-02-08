@@ -25,7 +25,7 @@ namespace BedAssign
         public static bool CanBeUsedEver(this Building_Bed bed) => !(bed is null) && !bed.IsHospitalityGuestBed() &&
                 !bed.Medical && bed.ForColonists && bed.def.building.bed_humanlike;
 
-        public static bool IsBetterThan(this Building_Bed bed1, Building_Bed bed2, bool useThingID = false, bool prioritizeSlabBeds = false)
+        public static bool IsBetterThan(this Building_Bed bed1, Building_Bed bed2, bool useThingID = false)
         {
             bool bed1IsBetter = true;
             bool bed2IsBetter = false;
@@ -34,15 +34,6 @@ namespace BedAssign
                 return bed2IsBetter;
             else if (bed2 is null && !(bed1 is null))
                 return bed1IsBetter;
-
-            // Prioritize slab beds (if requested)
-            if (prioritizeSlabBeds)
-            {
-                if (bed1.IsSlabBed() && !bed2.IsSlabBed())
-                    return bed1IsBetter;
-                else if (!bed1.IsSlabBed() && bed2.IsSlabBed())
-                    return bed2IsBetter;
-            }
 
             // .. then beds with rooms
             Room room1 = bed1.GetRoom();
@@ -91,28 +82,21 @@ namespace BedAssign
         public static bool PerformBetterBedSearch(List<Building_Bed> bedsSorted, Building_Bed currentBed,
             Pawn pawn, Pawn pawnLover, string singleOutput, string partnerOutput,
             TraitDef forTraitDef = null, Func<Building_Bed, bool> betterBedCustomFunc = null,
-            TraitDef[] excludedOwnerTraitDefs = null, bool canRetryIgnoringSlabBedPreference = false, bool shouldIgnoreSlabBedPreference = false)
+            TraitDef[] excludedOwnerTraitDefs = null)
         {
             if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false))
                 return false;
 
             bool canIgnoreLover = !(forTraitDef is null);
 
-            bool shouldUseSlabBeds = !shouldIgnoreSlabBedPreference
-                && pawn.PrefersSlabBed() && (pawnLover is null || pawnLover.PrefersSlabBed()) // both lovers prefer a slab bed
-                && bedsSorted.Any(bed => bed.IsSlabBed() && (bed == currentBed || !bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))); // an unexcluded slab bed exists on the map
-
             bool IsBetter(Building_Bed bed) => !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) // use the custom function if one was supplied
-                || bed.IsBetterThan(currentBed, prioritizeSlabBeds: shouldUseSlabBeds); // default IsBetterThan method (room impressiveness & bed stats)
+                || bed.IsBetterThan(currentBed); // default IsBetterThan method (room impressiveness & bed stats)
 
             // ... with their lover
             if (!(pawnLover is null))
             {
                 foreach (Building_Bed bed in bedsSorted)
                 {
-                    if (shouldUseSlabBeds && !bed.IsSlabBed())
-                        continue;
-
                     if (bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))
                         continue;
 
@@ -131,9 +115,6 @@ namespace BedAssign
             // ... for themself
             foreach (Building_Bed bed in bedsSorted)
             {
-                if (shouldUseSlabBeds && !bed.IsSlabBed())
-                    continue;
-
                 if (bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))
                     continue;
 
@@ -144,13 +125,7 @@ namespace BedAssign
                 }
             }
 
-            // ignore slab bed preference if possible and no better bed can be found
-            return shouldUseSlabBeds && canRetryIgnoringSlabBedPreference
-                && PerformBetterBedSearch(bedsSorted, currentBed,
-                    pawn, pawnLover, singleOutput, partnerOutput,
-                    forTraitDef, betterBedCustomFunc,
-                    excludedOwnerTraitDefs, canRetryIgnoringSlabBedPreference: false,
-                    shouldIgnoreSlabBedPreference: true);
+            return false;
         }
 
         private static bool IsExcluded(this Building_Bed bed, Pawn pawn, TraitDef forTraitDef = null, TraitDef[] excludedOwnerTraitDefs = null)
@@ -184,17 +159,6 @@ namespace BedAssign
             List<Thought> thoughts = new List<Thought>();
             pawn.needs?.mood?.thoughts?.GetAllMoodThoughts(thoughts);
             return thoughts.FindThought(thoughtDefName);
-        }
-
-        public static bool IsSlabBed(this Building_Bed bed) => bed.def.building.bed_slabBed;
-
-        public static bool PrefersSlabBed(this Pawn pawn)
-        {
-            if (pawn.Ideo != null)
-                foreach (Precept item in pawn.Ideo.PreceptsListForReading)
-                    if (item.def.prefersSlabBed)
-                        return true;
-            return false;
         }
     }
 }

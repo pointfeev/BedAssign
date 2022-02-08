@@ -98,12 +98,9 @@ namespace BedAssign
 
             bool canIgnoreLover = !(forTraitDef is null);
 
-            List<Building_Bed> useableSlabBeds = bedsSorted.FindAll(bed => bed.IsSlabBed()
-                && (bed == currentBed || !bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs)));
             bool shouldUseSlabBeds = !shouldIgnoreSlabBedPreference
                 && pawn.PrefersSlabBed() && (pawnLover is null || pawnLover.PrefersSlabBed()) // both lovers prefer a slab bed
-                && useableSlabBeds.Any(); // an unexcluded slab bed exists on the map
-            if (shouldUseSlabBeds) bedsSorted = useableSlabBeds;
+                && bedsSorted.Any(bed => bed.IsSlabBed() && (bed == currentBed || !bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))); // an unexcluded slab bed exists on the map
 
             bool IsBetter(Building_Bed bed) => !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) // use the custom function if one was supplied
                 || bed.IsBetterThan(currentBed, prioritizeSlabBeds: shouldUseSlabBeds); // default IsBetterThan method (room impressiveness & bed stats)
@@ -162,20 +159,14 @@ namespace BedAssign
 
             bool bedOwned = bedOwners.Any();
             if (bedOwned && !(forTraitDef is null))
-            {
                 bedOwned = bedOwners.Any(p => p != pawn && p.CanBeUsed()
-                    && (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false)
-                    && (!bed.IsSlabBed() || !pawn.PrefersSlabBed() || p.PrefersSlabBed())); // so pawns who prefer slab beds can kick out pawns that don't
-            }
+                    && (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
             if (bedOwned) return true;
 
             bool bedHasOwnerWithExcludedTrait = false;
             if (!(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
-            {
                 bedHasOwnerWithExcludedTrait = bedOwners.Any(p => p != pawn && p.CanBeUsed()
-                    && (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false)
-                    && (!bed.IsSlabBed() || !pawn.PrefersSlabBed() || p.PrefersSlabBed())); // so pawns who prefer slab beds can kick out pawns that don't
-            }
+                    && (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
             return bedHasOwnerWithExcludedTrait;
         }
 

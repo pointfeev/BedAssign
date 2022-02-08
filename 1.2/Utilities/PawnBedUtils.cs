@@ -25,7 +25,7 @@ namespace BedAssign
         public static bool CanBeUsedEver(this Building_Bed bed) => !(bed is null) && !bed.IsHospitalityGuestBed() &&
                 !bed.Medical && !bed.ForPrisoners && bed.def.building.bed_humanlike;
 
-        public static bool IsBetterThan(this Building_Bed bed1, Building_Bed bed2)
+        public static bool IsBetterThan(this Building_Bed bed1, Building_Bed bed2, bool useThingID = false)
         {
             bool bed1IsBetter = true;
             bool bed2IsBetter = false;
@@ -100,12 +100,12 @@ namespace BedAssign
             }
 
             // ... otherwise, use ID numbers for consistent sorting
-            return (bed1.thingIDNumber < bed2.thingIDNumber) ? bed1IsBetter : bed2IsBetter;
+            return useThingID && ((bed1.thingIDNumber < bed2.thingIDNumber) ? bed1IsBetter : bed2IsBetter);
         }
 
         public static bool PerformBetterBedSearch(List<Building_Bed> bedsSorted, Building_Bed currentBed,
             Pawn pawn, Pawn pawnLover, string singleOutput, string partnerOutput,
-            TraitDef forTraitDef = null, Func<Building_Bed, bool> forTraitDefFunc_DoesBedSatisfy = null,
+            TraitDef forTraitDef = null, Func<Building_Bed, bool> betterBedCustomFunc = null,
             TraitDef[] excludedOwnerTraitDefs = null)
         {
             if (!(forTraitDef is null) && !(pawn.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false))
@@ -125,7 +125,7 @@ namespace BedAssign
                         continue;
                     }
 
-                    bool isBedBetter = !(forTraitDefFunc_DoesBedSatisfy is null) && forTraitDefFunc_DoesBedSatisfy.Invoke(bed) || bed.IsBetterThan(currentBed);
+                    bool isBedBetter = !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) || bed.IsBetterThan(currentBed);
                     if (bed.GetBedSlotCount() >= 2 && isBedBetter && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                     {
                         BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn>() { pawn, pawnLover }));
@@ -150,7 +150,7 @@ namespace BedAssign
                     continue;
                 }
 
-                bool isBedBetter = !(forTraitDefFunc_DoesBedSatisfy is null) && forTraitDefFunc_DoesBedSatisfy.Invoke(bed) || bed.IsBetterThan(currentBed);
+                bool isBedBetter = !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) || bed.IsBetterThan(currentBed);
                 if (isBedBetter && pawn.TryClaimBed(bed))
                 {
                     BedAssign.Message(singleOutput, new LookTargets(new List<Pawn>() { pawn }));
@@ -182,12 +182,7 @@ namespace BedAssign
                 (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
             }
 
-            if (bedHasOwnerWithExcludedTrait)
-            {
-                return true;
-            }
-
-            return false;
+            return bedHasOwnerWithExcludedTrait;
         }
 
         public static bool SufferingFromThought(this List<Thought> thoughts, string thoughtDefName, out Thought thought, out float currentBaseMoodEffect)

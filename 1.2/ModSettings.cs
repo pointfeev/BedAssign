@@ -17,7 +17,9 @@ namespace BedAssign
 
     public class Mod : Verse.Mod
     {
+#pragma warning disable IDE0052 // Remove unread private members
         readonly ModSettings settings;
+#pragma warning restore IDE0052 // Remove unread private members
 
         public Mod(ModContentPack content) : base(content) => settings = GetSettings<ModSettings>();
 

@@ -165,7 +165,7 @@ namespace BedAssign
             {
                 bedOwned = bedOwners.Any(p => p != pawn && p.CanBeUsed()
                     && (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false)
-                    && (!pawn.PrefersSlabBed() || p.PrefersSlabBed())); // so pawns who prefer slab beds can kick out pawns that don't
+                    && (!bed.IsSlabBed() || !pawn.PrefersSlabBed() || p.PrefersSlabBed())); // so pawns who prefer slab beds can kick out pawns that don't
             }
             if (bedOwned) return true;
 
@@ -174,7 +174,7 @@ namespace BedAssign
             {
                 bedHasOwnerWithExcludedTrait = bedOwners.Any(p => p != pawn && p.CanBeUsed()
                     && (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false)
-                    && (!pawn.PrefersSlabBed() || p.PrefersSlabBed())); // so pawns who prefer slab beds can kick out pawns that don't
+                    && (!bed.IsSlabBed() || !pawn.PrefersSlabBed() || p.PrefersSlabBed())); // so pawns who prefer slab beds can kick out pawns that don't
             }
             return bedHasOwnerWithExcludedTrait;
         }

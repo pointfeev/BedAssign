@@ -63,32 +63,26 @@ namespace BedAssign
 
         public static void TryMakeSpaceFor(this Building_Bed bed, Pawn pawn)
         {
-            if (!pawn.CanBeUsed() || !bed.CanBeUsed())
-            {
-                return;
-            }
-
+            if (!pawn.CanBeUsed() || !bed.CanBeUsed()) return;
             List<Pawn> otherOwners = bed.OwnersForReading.FindAll(p => p != pawn);
             if (otherOwners.Any())
-            {
                 for (int i = otherOwners.Count - 1; i >= 0; i--)
                 {
                     Pawn sleeper = otherOwners[i];
-                    if ((!sleeper.CanBeUsed() || !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper) || !BedUtility.WillingToShareBed(pawn, sleeper))
+                    if ((!sleeper.CanBeUsed() || pawn.PrefersSlabBed() && !sleeper.PrefersSlabBed()
+                        || !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper)
+                        || !BedUtility.WillingToShareBed(pawn, sleeper))
                         && sleeper.TryUnclaimBed())
                     {
                         //BedAssign.Message("MakeSpaceFor: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort);
                     }
                 }
-            }
         }
 
         public static bool TryClaimBed(this Pawn pawn, Building_Bed bed, bool canMakeSpaceFor = true)
         {
             if (!pawn.CanBeUsed() || !bed.CanBeUsed())
-            {
                 return false;
-            }
 
             if (pawn.Map != bed.Map)
             {
@@ -129,11 +123,7 @@ namespace BedAssign
                 return false;
             }
 
-            if (canMakeSpaceFor)
-            {
-                bed.TryMakeSpaceFor(pawn);
-            }
-
+            if (canMakeSpaceFor) bed.TryMakeSpaceFor(pawn);
             if (bed.AnyUnownedSleepingSlot && pawn.ownership.ClaimBedIfNonMedical(bed))
             {
                 //BedAssign.Message("TryClaimBed succeeded: " + pawn.LabelShort + " claimed " + bed.LabelShort);

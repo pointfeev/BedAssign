@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 using RimWorld;
 
@@ -132,8 +133,9 @@ namespace BedAssign
                 }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }))
                 return;
 
-            // Attempt to claim a better empty bed
-            if (PawnBedUtils.PerformBetterBedSearch(bedsDescending, currentBed, pawn, pawnLover,
+            // Attempt to claim a better empty bed (if not a "third wheel" in a polyamorous relationship involving bigger beds)
+            bool thirdWheelWithApplicableBed = pawnLover is null && !(pawnLoverNonMutual is null) && pawnLoverNonMutual.ownership?.OwnedBed?.GetBedSlotCount() > 2;
+            if (!thirdWheelWithApplicableBed && PawnBedUtils.PerformBetterBedSearch(bedsDescending, currentBed, pawn, pawnLover,
                 singleOutput: pawn.LabelShort + " claimed a better empty bed.",
                 partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better empty bed together.",
                 excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }))
@@ -182,7 +184,10 @@ namespace BedAssign
                                         {
                                             Pawn sleeper = otherOwners[i];
                                             bool bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => (p.story?.traits?.allTraits?.Any(t => mutualLoverBedKickExcludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
-                                            if (!bedHasOwnerWithExcludedTrait && sleeper.GetMostLikedLovePartner() is null && sleeper.TryUnclaimBed())
+                                            Pawn partner = sleeper.GetMostLikedLovePartner();
+                                            if (!(partner is null) && (partner == pawn || partner == pawnLover) && bed.GetBedSlotCount() >= 3)
+                                                continue;
+                                            else if (!bedHasOwnerWithExcludedTrait && partner is null && sleeper.TryUnclaimBed())
                                             {
                                                 bootedPawns.Add(sleeper);
                                                 bootedPawnNames.Add(sleeper.LabelShort);
@@ -211,8 +216,10 @@ namespace BedAssign
                 }
             }
 
-            // Attempt to avoid the "Sharing bed" mood penalty
-            if (thoughts.SufferingFromThought("SharedBed", out _, out _) && pawn.TryUnclaimBed())
+            // Attempt to avoid the "Sharing bed" mood penalty (if it's not due to polyamory)
+            bool inBedWithAnyLover = (pawnLover is null || pawnLover.ownership is null || pawnLover.ownership.OwnedBed != currentBed)
+                && (pawnLoverNonMutual is null || pawnLoverNonMutual.ownership is null || pawnLoverNonMutual.ownership.OwnedBed != currentBed);
+            if (thoughts.SufferingFromThought("SharedBed", out _, out _) && !inBedWithAnyLover && pawn.TryUnclaimBed())
             {
                 Message(pawn.LabelShort + " unclaimed their bed to avoid the bed sharing mood penalty", new LookTargets(new List<Pawn>() { pawn }));
                 return;

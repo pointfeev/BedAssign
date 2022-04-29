@@ -12,18 +12,14 @@ namespace BedAssign
         {
             List<Pawn> forcedPawns = new List<Pawn>() { };
             if (!bed.CanBeUsed())
-            {
                 return forcedPawns;
-            }
 
             foreach (KeyValuePair<Pawn, Building_Bed> forcedPair in BedAssignData.ForcedBeds)
             {
                 Pawn pawn = forcedPair.Key;
                 Building_Bed pawnForcedBed = forcedPair.Value;
                 if (pawnForcedBed == bed && pawn.Map == pawnForcedBed.Map)
-                {
                     forcedPawns.Add(pawn);
-                }
             }
             //BedAssign.Message("GetForcedPawns: returned " + forcedPawns.Count + " pawns for " + bed.LabelShort);
             return forcedPawns;
@@ -32,9 +28,7 @@ namespace BedAssign
         public static Building_Bed GetForcedBed(this Pawn pawn)
         {
             if (!pawn.CanBeUsed())
-            {
                 return null;
-            }
 
             Building_Bed pawnForcedBed = BedAssignData.ForcedBeds.TryGetValue(pawn);
             if (pawnForcedBed != null && pawn.Map == pawnForcedBed.Map && pawnForcedBed.CanBeUsed())
@@ -48,9 +42,7 @@ namespace BedAssign
         public static Pawn GetMostLikedLovePartner(this Pawn pawn)
         {
             if (!pawn.CanBeUsed())
-            {
                 return null;
-            }
 
             Pawn partner = LovePartnerRelationUtility.ExistingMostLikedLovePartner(pawn, false);
             if (partner != null && pawn.Map == partner.Map)
@@ -64,13 +56,10 @@ namespace BedAssign
         public static void TryMakeSpaceFor(this Building_Bed bed, Pawn pawn)
         {
             if (!pawn.CanBeUsed() || !bed.CanBeUsed())
-            {
                 return;
-            }
 
             List<Pawn> otherOwners = bed.OwnersForReading.FindAll(p => p != pawn);
             if (otherOwners.Any())
-            {
                 for (int i = otherOwners.Count - 1; i >= 0; i--)
                 {
                     Pawn sleeper = otherOwners[i];
@@ -80,15 +69,12 @@ namespace BedAssign
                         //BedAssign.Message("MakeSpaceFor: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort);
                     }
                 }
-            }
         }
 
         public static bool TryClaimBed(this Pawn pawn, Building_Bed bed, bool canMakeSpaceFor = true)
         {
             if (!pawn.CanBeUsed() || !bed.CanBeUsed())
-            {
                 return false;
-            }
 
             if (pawn.Map != bed.Map)
             {
@@ -99,6 +85,12 @@ namespace BedAssign
             if (bed.Medical || !RestUtility.CanUseBedEver(pawn, bed.def))
             {
                 //BedAssign.Message("TryClaimBed failed: " + pawn.LabelShort + " can never use " + bed.LabelShort);
+                return false;
+            }
+
+            if (!ForbidUtility.InAllowedArea(bed.InteractionCell, pawn))
+            {
+                //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " is outside " + pawn.LabelShort + "'s allowed area");
                 return false;
             }
 
@@ -124,9 +116,7 @@ namespace BedAssign
             }
 
             if (canMakeSpaceFor)
-            {
                 bed.TryMakeSpaceFor(pawn);
-            }
 
             if (bed.AnyUnownedSleepingSlot && pawn.ownership.ClaimBedIfNonMedical(bed))
             {
@@ -140,9 +130,7 @@ namespace BedAssign
         public static bool TryUnclaimBed(this Pawn pawn)
         {
             if (!pawn.CanBeUsed())
-            {
                 return false;
-            }
 
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == null)

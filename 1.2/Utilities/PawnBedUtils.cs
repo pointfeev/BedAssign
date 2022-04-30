@@ -100,9 +100,11 @@ namespace BedAssign
                     if (IsBedExcluded(bed, pawn, forTraitDef, excludedOwnerTraitDefs))
                         continue;
 
+                    Building_Bed pawnLoverCurrentBed = pawnLover?.ownership?.OwnedBed;
                     if (bed.GetBedSlotCount() >= 2 && IsBetter(bed) && pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
                     {
-                        BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn>() { pawn, pawnLover }));
+                        if (bed != currentBed || bed != pawnLoverCurrentBed)
+                            BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn>() { pawn, pawnLover }));
                         return true;
                     }
                     else if (!(currentBed is null))
@@ -120,7 +122,8 @@ namespace BedAssign
 
                 if (IsBetter(bed) && pawn.TryClaimBed(bed))
                 {
-                    BedAssign.Message(singleOutput, new LookTargets(new List<Pawn>() { pawn }));
+                    if (bed != currentBed)
+                        BedAssign.Message(singleOutput, new LookTargets(new List<Pawn>() { pawn }));
                     return true;
                 }
             }

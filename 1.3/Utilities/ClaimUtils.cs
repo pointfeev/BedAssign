@@ -3,6 +3,7 @@
 using RimWorld;
 
 using Verse;
+using Verse.AI;
 
 namespace BedAssign
 {
@@ -88,12 +89,6 @@ namespace BedAssign
                 return false;
             }
 
-            if (!ForbidUtility.InAllowedArea(bed.InteractionCell, pawn))
-            {
-                //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " is outside " + pawn.LabelShort + "'s allowed area");
-                return false;
-            }
-
             Building_Bed pawnBed = pawn.ownership.OwnedBed;
             if (pawnBed == bed)
             {
@@ -118,6 +113,18 @@ namespace BedAssign
             if (bed.GetForcedPawns().Any(sleeper => sleeper != pawn && sleeper.CanBeUsed() && (!LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper) || !BedUtility.WillingToShareBed(pawn, sleeper))))
             {
                 //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " has forced pawns that are unable to sleep with " + pawn.LabelShort);
+                return false;
+            }
+
+            if (!ForbidUtility.InAllowedArea(bed.InteractionCell, pawn))
+            {
+                //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " is outside " + pawn.LabelShort + "'s allowed area");
+                return false;
+            }
+
+            if (!ReachabilityUtility.CanReach(pawn, bed, PathEndMode.InteractionCell, Danger.None))
+            {
+                //BedAssign.Message("TryClaimBed failed: " + pawn.LabelShort + " can not reach " + bed.LabelShort);
                 return false;
             }
 

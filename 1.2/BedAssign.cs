@@ -132,7 +132,7 @@ namespace BedAssign
                 }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }))
                 return;
 
-            // Attempt to claim a better empty bed (if not a "third wheel" in a polyamorous relationship)
+            // Attempt to claim a better empty bed (if not a "third wheel" in a polyamorous relationship involving bigger beds)
             bool thirdWheelWithApplicableBed = pawnLover is null && !(pawnLoverNonMutual is null) && pawnLoverNonMutual.ownership?.OwnedBed?.GetBedSlotCount() > 2;
             if (!thirdWheelWithApplicableBed && PawnBedUtils.PerformBetterBedSearch(bedsDescending, currentBed, pawn, pawnLover,
                 singleOutput: pawn.LabelShort + " claimed a better empty bed.",
@@ -160,7 +160,7 @@ namespace BedAssign
                     Building_Bed loverBed = pawnLover.ownership.OwnedBed;
                     if (currentBed != loverBed)
                     {
-                        if (pawn.TryClaimBed(loverBed))
+                        if (loverBed.GetBedSlotCount() >= 2 && pawn.TryClaimBed(loverBed))
                         {
                             Message(pawn.LabelShort + " claimed the bed of their lover " + pawnLover.LabelShort + ".", new LookTargets(new List<Pawn>() { pawn, pawnLover }));
                             return;

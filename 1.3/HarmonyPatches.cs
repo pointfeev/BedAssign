@@ -15,7 +15,6 @@ namespace BedAssign
         static HarmonyPatches()
         {
             Harmony harmony = new Harmony("pointfeev.bedassign");
-
             harmony.Patch(
                 original: AccessTools.Method(typeof(JobGiver_GetRest), "TryGiveJob"),
                 prefix: new HarmonyMethod(typeof(HarmonyPatches), "JobPrefix")

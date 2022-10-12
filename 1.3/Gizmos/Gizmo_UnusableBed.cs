@@ -15,7 +15,7 @@ namespace BedAssign
             {
                 if (BedAssignData.UnusableBeds.Contains(bed))
                 {
-                    BedAssignData.UnusableBeds.Remove(bed);
+                    _ = BedAssignData.UnusableBeds.Remove(bed);
                 }
                 else
                 {

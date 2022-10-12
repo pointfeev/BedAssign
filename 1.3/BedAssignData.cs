@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using RimWorld;
 
-using RimWorld;
+using System.Collections.Generic;
 
 using Verse;
 
@@ -17,7 +17,7 @@ namespace BedAssign
             {
                 if (forcedBeds is null)
                     forcedBeds = new Dictionary<Pawn, Building_Bed>();
-                forcedBeds.RemoveAll((KeyValuePair<Pawn, Building_Bed> entry) => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsedEver());
+                _ = forcedBeds.RemoveAll((KeyValuePair<Pawn, Building_Bed> entry) => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsedEver());
                 return forcedBeds;
             }
         }
@@ -29,7 +29,7 @@ namespace BedAssign
             {
                 if (unusableBeds is null)
                     unusableBeds = new List<Building_Bed>();
-                unusableBeds.RemoveAll(bed => !bed.CanBeUsedEver());
+                _ = unusableBeds.RemoveAll(bed => !bed.CanBeUsedEver());
                 return unusableBeds;
             }
         }

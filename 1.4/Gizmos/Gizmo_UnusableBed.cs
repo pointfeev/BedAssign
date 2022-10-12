@@ -14,20 +14,16 @@ namespace BedAssign
             toggleAction = delegate ()
             {
                 if (BedAssignData.UnusableBeds.Contains(bed))
-                {
                     _ = BedAssignData.UnusableBeds.Remove(bed);
-                }
                 else
-                {
                     BedAssignData.UnusableBeds.Add(bed);
-                }
                 _ = BedAssignData.ForcedBeds;
             };
             isActive = () => !BedAssignData.UnusableBeds.Contains(bed);
             defaultLabel = "Allow reassign";
             defaultDesc = "Allow automatic reassignment to utilize this bed.";
             icon = bed.AsTexture2D();
-            order = GizmoOrder.Special + 1;
+            Order = GizmoOrder.Special + 1;
         }
     }
 }

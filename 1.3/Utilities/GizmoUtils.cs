@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using RimWorld;
 
-using RimWorld;
+using System.Collections.Generic;
+using System.Linq;
 
 using Verse;
 
@@ -60,9 +60,9 @@ namespace BedAssign
                 {
                     if (entry.Value.OwnersForReading.Contains(entry.Key))
                     {
-                        entry.Value.OwnersForReading.Remove(entry.Key);
+                        _ = entry.Value.OwnersForReading.Remove(entry.Key);
                     }
-                    BedAssignData.ForcedBeds.Remove(entry.Key);
+                    _ = BedAssignData.ForcedBeds.Remove(entry.Key);
                     continue;
                 }
                 if (entry.Value == bed)

@@ -1,9 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-
-using HarmonyLib;
+﻿using HarmonyLib;
 
 using RimWorld;
+
+using System;
+using System.Collections.Generic;
 
 using Verse;
 
@@ -15,11 +15,11 @@ namespace BedAssign
         static HarmonyPatches()
         {
             Harmony harmony = new Harmony("pointfeev.bedassign");
-            harmony.Patch(
+            _ = harmony.Patch(
                 original: AccessTools.Method(typeof(JobGiver_GetRest), "TryGiveJob"),
                 prefix: new HarmonyMethod(typeof(HarmonyPatches), "JobPrefix")
             );
-            harmony.Patch(
+            _ = harmony.Patch(
                 original: AccessTools.Method(typeof(Building_Bed), "GetGizmos"),
                 postfix: new HarmonyMethod(typeof(HarmonyPatches), "GizmoPostfix")
             );

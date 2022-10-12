@@ -1,8 +1,8 @@
-﻿using System;
+﻿using RimWorld;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
-
-using RimWorld;
 
 using Verse;
 
@@ -108,7 +108,7 @@ namespace BedAssign
                         return true;
                     }
                     else if (!(currentBed is null))
-                        pawn.TryClaimBed(currentBed);
+                        _ = pawn.TryClaimBed(currentBed);
                 }
                 if (!canIgnoreLover)
                     return false;

@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using RimWorld;
 
-using RimWorld;
+using System.Collections.Generic;
 
 using Verse;
 using Verse.AI;
@@ -152,7 +152,7 @@ namespace BedAssign
                 //BedAssign.Message("TryUnclaimBed succeeded: " + pawn.LabelShort + " unclaimed " + pawnBed.LabelShort);
                 pawn.mindState.lastDisturbanceTick = Find.TickManager.TicksGame;
                 RestUtility.WakeUp(pawn);
-                pawn.ownership.UnclaimBed();
+                _ = pawn.ownership.UnclaimBed();
                 return true;
             }
             //BedAssign.Message("TryUnclaimBed failed: " + pawn.LabelShort + " can't unclaim forced bed");

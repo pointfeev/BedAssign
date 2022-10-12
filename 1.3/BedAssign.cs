@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using RimWorld;
 
-using RimWorld;
+using System.Collections.Generic;
+using System.Linq;
 
 using UnityEngine;
 
@@ -31,7 +31,7 @@ namespace BedAssign
                 if (bedsSorted is null)
                     bedsSorted = new List<Building_Bed>();
             }
-            bedsSorted.RemoveAll(bed => !bed.CanBeUsed());
+            _ = bedsSorted.RemoveAll(bed => !bed.CanBeUsed());
             int bed1IsBetter = descending ? -1 : 1;
             int bed2IsBetter = descending ? 1 : -1;
             bedsSorted.Sort((bed1, bed2) => bed1.IsBetterThan(bed2, useThingID: true) ? bed1IsBetter : bed2IsBetter);
@@ -48,7 +48,7 @@ namespace BedAssign
             // Unclaim off-map bed to give space to other colonists
             if (currentBed != null && pawn.Map != currentBed.Map)
             {
-                pawn.ownership.UnclaimBed();
+                _ = pawn.ownership.UnclaimBed();
                 Message(pawn.LabelShort + " unclaimed their bed due to being off-map.", new LookTargets(new List<Pawn>() { pawn }));
                 currentBed = null;
             }
@@ -206,7 +206,7 @@ namespace BedAssign
                                             return;
                                         }
                                         else if (canClaim && !(currentBed is null))
-                                            pawn.TryClaimBed(currentBed);
+                                            _ = pawn.TryClaimBed(currentBed);
                                     }
                                 }
                             }

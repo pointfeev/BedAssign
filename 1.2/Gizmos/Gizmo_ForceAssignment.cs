@@ -19,7 +19,7 @@ namespace BedAssign
             {
                 if (BedAssignData.ForcedBeds.TryGetValue(pawn) == this.bed)
                 {
-                    BedAssignData.ForcedBeds.Remove(pawn);
+                    _ = BedAssignData.ForcedBeds.Remove(pawn);
                 }
                 else
                 {

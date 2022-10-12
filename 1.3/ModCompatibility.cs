@@ -1,9 +1,9 @@
-﻿using System;
-using System.Reflection;
-
-using CompatUtils;
+﻿using CompatUtils;
 
 using RimWorld;
+
+using System;
+using System.Reflection;
 
 using Verse;
 

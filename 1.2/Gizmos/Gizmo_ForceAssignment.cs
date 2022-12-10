@@ -18,13 +18,9 @@ namespace BedAssign
             toggleAction = delegate ()
             {
                 if (BedAssignData.ForcedBeds.TryGetValue(pawn) == this.bed)
-                {
                     _ = BedAssignData.ForcedBeds.Remove(pawn);
-                }
                 else
-                {
                     BedAssignData.ForcedBeds.SetOrAdd(pawn, this.bed);
-                }
             };
             isActive = () => BedAssignData.ForcedBeds.TryGetValue(pawn) == this.bed;
             defaultLabel = "Force assign " + pawn.LabelShort;

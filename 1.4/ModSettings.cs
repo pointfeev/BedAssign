@@ -11,6 +11,7 @@ namespace BedAssign
         public static bool avoidGreedyPenalty = true;
         public static bool avoidAsceticPenalty = true;
         public static bool claimBetterBeds = true;
+        public static int betterBedRoomImpressivenessThreshold = 3;
         public static bool avoidPartnerPenalty = true;
         public static bool avoidSharingPenalty = true;
 
@@ -21,6 +22,7 @@ namespace BedAssign
             Scribe_Values.Look(ref avoidGreedyPenalty, "avoidGreedyPenalty", true);
             Scribe_Values.Look(ref avoidAsceticPenalty, "avoidAsceticPenalty", true);
             Scribe_Values.Look(ref claimBetterBeds, "claimBetterBeds", true);
+            Scribe_Values.Look(ref betterBedRoomImpressivenessThreshold, "betterBedRoomImpressivenessThreshold", 3);
             Scribe_Values.Look(ref avoidPartnerPenalty, "avoidPartnerPenalty", true);
             Scribe_Values.Look(ref avoidSharingPenalty, "avoidSharingPenalty", true);
             base.ExposeData();
@@ -45,6 +47,9 @@ namespace BedAssign
             listingStandard.CheckboxLabeled("Attempt to avoid Greedy mood penalty", ref ModSettings.avoidGreedyPenalty, "Should the mod care about the Greedy mood penalty?");
             listingStandard.CheckboxLabeled("Attempt to avoid Ascetic mood penalty", ref ModSettings.avoidAsceticPenalty, "Should the mod care about the Ascetic mood penalty?");
             listingStandard.CheckboxLabeled("Attempt to claim better empty beds", ref ModSettings.claimBetterBeds, "Should the mod care about the existance of more impressive bedrooms or more effective beds?");
+            if (ModSettings.claimBetterBeds)
+                ModSettings.betterBedRoomImpressivenessThreshold = (int)listingStandard.SliderLabeled("    Better bed room impressiveness threshold: " + ModSettings.betterBedRoomImpressivenessThreshold,
+                    ModSettings.betterBedRoomImpressivenessThreshold, 0, 30, 0.6f, "The amount of improvement in impressiveness that a prospective bed room must have over a pawn's current bed room to allow switching. This setting helps to remove needless spam switching from impressiveness fluctuations.");
             listingStandard.CheckboxLabeled("Attempt to avoid \"Want to sleep with partner\" mood penalty", ref ModSettings.avoidPartnerPenalty, "Should the mod care about the partner separation mood penalty?");
             listingStandard.CheckboxLabeled("Attempt to avoid \"Sharing bed\" mood penalty", ref ModSettings.avoidSharingPenalty, "Should the mod care about the bed sharing mood penalty?");
             listingStandard.End();

@@ -11,6 +11,7 @@ namespace BedAssign
         public static bool avoidGreedyPenalty = true;
         public static bool avoidAsceticPenalty = true;
         public static bool claimBetterBeds = true;
+        public static float betterBedRoomImpressivenessThreshold = 3;
         public static bool avoidPartnerPenalty = true;
         public static bool avoidSharingPenalty = true;
 
@@ -21,6 +22,7 @@ namespace BedAssign
             Scribe_Values.Look(ref avoidGreedyPenalty, "avoidGreedyPenalty", true);
             Scribe_Values.Look(ref avoidAsceticPenalty, "avoidAsceticPenalty", true);
             Scribe_Values.Look(ref claimBetterBeds, "claimBetterBeds", true);
+            Scribe_Values.Look(ref betterBedRoomImpressivenessThreshold, "betterBedRoomImpressivenessThreshold", 3);
             Scribe_Values.Look(ref avoidPartnerPenalty, "avoidPartnerPenalty", true);
             Scribe_Values.Look(ref avoidSharingPenalty, "avoidSharingPenalty", true);
             base.ExposeData();
@@ -35,6 +37,8 @@ namespace BedAssign
 
         public Mod(ModContentPack content) : base(content) => settings = GetSettings<ModSettings>();
 
+        private string thresholdBuffer = ModSettings.betterBedRoomImpressivenessThreshold.ToString();
+
         public override void DoSettingsWindowContents(Rect inRect)
         {
             Listing_Standard listingStandard = new Listing_Standard();
@@ -45,7 +49,8 @@ namespace BedAssign
             listingStandard.CheckboxLabeled("Attempt to avoid Greedy mood penalty", ref ModSettings.avoidGreedyPenalty, "Should the mod care about the Greedy mood penalty?");
             listingStandard.CheckboxLabeled("Attempt to avoid Ascetic mood penalty", ref ModSettings.avoidAsceticPenalty, "Should the mod care about the Ascetic mood penalty?");
             listingStandard.CheckboxLabeled("Attempt to claim better empty beds", ref ModSettings.claimBetterBeds, "Should the mod care about the existance of more impressive bedrooms or more effective beds?");
-            listingStandard.CheckboxLabeled("Attempt to avoid \"Want to sleep with partner\" mood penalty", ref ModSettings.avoidPartnerPenalty, "Should the mod care about the partner separation mood penalty?");
+            if (ModSettings.claimBetterBeds)
+                listingStandard.TextFieldNumericLabeled("Better bed room impressiveness threshold", ref ModSettings.betterBedRoomImpressivenessThreshold, ref thresholdBuffer, 0, 30); listingStandard.CheckboxLabeled("Attempt to avoid \"Want to sleep with partner\" mood penalty", ref ModSettings.avoidPartnerPenalty, "Should the mod care about the partner separation mood penalty?");
             listingStandard.CheckboxLabeled("Attempt to avoid \"Sharing bed\" mood penalty", ref ModSettings.avoidSharingPenalty, "Should the mod care about the bed sharing mood penalty?");
             listingStandard.End();
             base.DoSettingsWindowContents(inRect);

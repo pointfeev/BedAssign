@@ -25,61 +25,28 @@ namespace BedAssign
         public static bool CanBeUsedEver(this Building_Bed bed) => !(bed is null) && !bed.IsHospitalityGuestBed() &&
                 !bed.Medical && bed.ForColonists && bed.def.building.bed_humanlike;
 
-        public static bool IsBetterThan(this Building_Bed bed1, Building_Bed bed2, bool useThingID = false)
+        public static bool IsBetterThan(this Building_Bed bed, Building_Bed currentBed, Pawn pawn)
         {
-            bool bed1IsBetter = true;
-            bool bed2IsBetter = false;
-
-            if (bed1 is null && !(bed2 is null))
-                return bed2IsBetter;
-            else if (bed2 is null && !(bed1 is null))
-                return bed1IsBetter;
-
-            // Prioritize beds with rooms
-            Room room1 = bed1.GetRoom();
-            Room room2 = bed2.GetRoom();
-            if (room1 is null && !(room2 is null))
-                return bed2IsBetter;
-            else if (room2 is null && !(room1 is null))
-                return bed1IsBetter;
-
-            // ... then bed room impressiveness
-            float impressive1 = room1.GetStat(RoomStatDefOf.Impressiveness);
-            float impressive2 = room2.GetStat(RoomStatDefOf.Impressiveness);
-            if (impressive1 < impressive2)
-                return bed2IsBetter;
-            else if (impressive1 > impressive2)
-                return bed1IsBetter;
-
-            // ... then bed rest effectiveness
-            float effect1 = bed1.GetStatValue(StatDefOf.BedRestEffectiveness);
-            float effect2 = bed2.GetStatValue(StatDefOf.BedRestEffectiveness);
-            if (effect1 < effect2)
-                return bed2IsBetter;
-            else if (effect1 > effect2)
-                return bed1IsBetter;
-
-            // ... then bed comfort
-            float comfort1 = bed1.GetStatValue(StatDefOf.Comfort);
-            float comfort2 = bed2.GetStatValue(StatDefOf.Comfort);
-            if (comfort1 < comfort2)
-                return bed2IsBetter;
-            else if (comfort1 > comfort2)
-                return bed1IsBetter;
-
-            // ... then bed beauty
-            float beauty1 = bed1.GetStatValue(StatDefOf.Beauty);
-            float beauty2 = bed2.GetStatValue(StatDefOf.Beauty);
-            if (beauty1 < beauty2)
-                return bed2IsBetter;
-            else if (beauty1 > beauty2)
-                return bed1IsBetter;
-
-            // ... otherwise, use ID numbers for consistent sorting
-            return useThingID && ((bed1.thingIDNumber < bed2.thingIDNumber) ? bed1IsBetter : bed2IsBetter);
+            Room room = bed.GetRoom();
+            Room currentRoom = currentBed.GetRoom();
+            if (!(room is null) && currentRoom is null)
+                return true; // Prioritize beds with rooms
+            float impressiveness = room.GetStat(RoomStatDefOf.Impressiveness);
+            float currentImpressiveness = currentRoom.GetStat(RoomStatDefOf.Impressiveness);
+            if (impressiveness - currentImpressiveness > ModSettings.betterBedRoomImpressivenessThreshold)
+                return true; // ... then bed room impressiveness
+            float rest = bed.GetStatValueForPawn(StatDefOf.BedRestEffectiveness, pawn);
+            float currentRest = currentBed.GetStatValueForPawn(StatDefOf.BedRestEffectiveness, pawn);
+            if (rest - currentRest > 0)
+                return true; // ... then bed rest effectiveness
+            float comfort = bed.GetStatValueForPawn(StatDefOf.Comfort, pawn);
+            float currentComfort = currentBed.GetStatValueForPawn(StatDefOf.Comfort, pawn);
+            if (comfort - currentComfort > 0)
+                return true; // ... then bed comfort
+            return false;
         }
 
-        public static bool PerformBetterBedSearch(List<Building_Bed> bedsSorted, Building_Bed currentBed,
+        public static bool PerformBetterBedSearch(IOrderedEnumerable<Building_Bed> orderedBeds, Building_Bed currentBed,
             Pawn pawn, Pawn pawnLover, string singleOutput, string partnerOutput,
             TraitDef forTraitDef = null, Func<Building_Bed, bool> betterBedCustomFunc = null,
             TraitDef[] excludedOwnerTraitDefs = null)
@@ -90,12 +57,12 @@ namespace BedAssign
             bool canIgnoreLover = !(forTraitDef is null);
 
             bool IsBetter(Building_Bed bed) => !(betterBedCustomFunc is null) && betterBedCustomFunc.Invoke(bed) // use the custom function if one was supplied
-                || bed.IsBetterThan(currentBed); // default IsBetterThan method (room impressiveness & bed stats)
+                || bed.IsBetterThan(currentBed, pawn); // default IsBetterThan method (bed room impressiveness & bed stats)
 
             // ... with their lover
             if (!(pawnLover is null))
             {
-                foreach (Building_Bed bed in bedsSorted)
+                foreach (Building_Bed bed in orderedBeds)
                 {
                     if (bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))
                         continue;
@@ -115,7 +82,7 @@ namespace BedAssign
             }
 
             // ... for themself
-            foreach (Building_Bed bed in bedsSorted)
+            foreach (Building_Bed bed in orderedBeds)
             {
                 if (bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))
                     continue;

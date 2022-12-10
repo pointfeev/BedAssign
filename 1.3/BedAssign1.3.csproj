@@ -38,18 +38,18 @@
     <Reference Include="System.Net.Http" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ModSettings.cs" />
-    <Compile Include="Gizmos\Gizmo_UnusableBed.cs" />
-    <Compile Include="Gizmos\Gizmo_ForceAssignment.cs" />
+    <Compile Include="BedAssign.cs" />
     <Compile Include="BedAssignData.cs" />
-    <Compile Include="Utilities\TextureUtils.cs" />
+    <Compile Include="Gizmos\Gizmo_ForceAssignment.cs" />
+    <Compile Include="Gizmos\Gizmo_UnusableBed.cs" />
+    <Compile Include="HarmonyPatches.cs" />
+    <Compile Include="ModCompatibility.cs" />
+    <Compile Include="ModSettings.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\ClaimUtils.cs" />
     <Compile Include="Utilities\GizmoUtils.cs" />
     <Compile Include="Utilities\PawnBedUtils.cs" />
-    <Compile Include="Utilities\ClaimUtils.cs" />
-    <Compile Include="ModCompatibility.cs" />
-    <Compile Include="HarmonyPatches.cs" />
-    <Compile Include="BedAssign.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utilities\TextureUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref">

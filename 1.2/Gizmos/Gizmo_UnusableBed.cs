@@ -14,13 +14,9 @@ namespace BedAssign
             toggleAction = delegate ()
             {
                 if (BedAssignData.UnusableBeds.Contains(bed))
-                {
                     _ = BedAssignData.UnusableBeds.Remove(bed);
-                }
                 else
-                {
                     BedAssignData.UnusableBeds.Add(bed);
-                }
                 _ = BedAssignData.ForcedBeds;
             };
             isActive = () => !BedAssignData.UnusableBeds.Contains(bed);

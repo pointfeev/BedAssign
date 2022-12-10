@@ -22,22 +22,21 @@ namespace BedAssign
 
         public static void Error(string text) => Log.Error(text);
 
-        public static List<Building_Bed> GetSortedBedsOnPawnsMap(Pawn pawn, List<Building_Bed> toOnlyBeSorted = null, bool descending = true)
+        private static float GetBedRoomImpressiveness(Building_Bed b) => (b.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
+
+        public static IOrderedEnumerable<Building_Bed> GetOrderedBedsForPawn(Pawn pawn, bool ascendingImpressiveness = false)
         {
-            List<Building_Bed> bedsSorted = toOnlyBeSorted;
-            if (bedsSorted is null)
-            {
-                bedsSorted = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>().ToList();
-                if (bedsSorted is null)
-                    bedsSorted = new List<Building_Bed>();
-            }
-            _ = bedsSorted.RemoveAll(bed => !bed.CanBeUsed());
-            int bed1IsBetter = descending ? -1 : 1;
-            int bed2IsBetter = descending ? 1 : -1;
-            bedsSorted.Sort((bed1, bed2) => bed1.IsBetterThan(bed2, useThingID: true) ? bed1IsBetter : bed2IsBetter);
-            return bedsSorted;
+            IEnumerable<Building_Bed> beds = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>()?.Where(b => b.CanBeUsed());
+            IOrderedEnumerable<Building_Bed> orderedBeds = ascendingImpressiveness ? beds.OrderBy(GetBedRoomImpressiveness) : beds.OrderByDescending(GetBedRoomImpressiveness);
+            return orderedBeds.ThenByDescending(b => b.GetStatValueForPawn(StatDefOf.BedRestEffectiveness, pawn))
+                .ThenByDescending(b => b.GetStatValueForPawn(StatDefOf.Comfort, pawn))
+                .ThenBy(b => b.thingIDNumber);
         }
 
+        private static readonly TraitDef[] jealousPenaltyExcludedOwnerTraitDefs = new TraitDef[] { TraitDefOf.Jealous };
+        private static readonly TraitDef[] greedyPenaltyExcludedOwnerTraitDefs = new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy };
+        private static readonly TraitDef[] asceticPenaltyExcludedOwnerTraitDefs = new TraitDef[] { TraitDefOf.Ascetic };
+        private static readonly TraitDef[] betterBedExcludedOwnerTraitDefs = new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy };
         private static readonly TraitDef[] mutualLoverBedKickExcludedOwnerTraitDefs = new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy };
 
         public static void LookForBedReassignment(this Pawn pawn)
@@ -70,10 +69,6 @@ namespace BedAssign
             if (pawnLover?.GetMostLikedLovePartner() != pawn)
                 pawnLover = null;
 
-            // Get all beds on the pawn's map, sorted
-            List<Building_Bed> bedsDescending = GetSortedBedsOnPawnsMap(pawn);
-            List<Building_Bed> bedsAscending = GetSortedBedsOnPawnsMap(pawn, toOnlyBeSorted: bedsDescending, descending: false);
-
             // Get all of the pawn's mood-related thoughts
             List<Thought> thoughts = new List<Thought>();
             pawn.needs?.mood?.thoughts?.GetAllMoodThoughts(thoughts);
@@ -82,63 +77,76 @@ namespace BedAssign
             List<Thought> thoughtsLover = new List<Thought>();
             pawnLover?.needs?.mood?.thoughts?.GetAllMoodThoughts(thoughtsLover);
 
+            IOrderedEnumerable<Building_Bed> orderedBeds = null;
+            IOrderedEnumerable<Building_Bed> orderedBedsAscetic = null;
+
             if (ModSettings.avoidJealousPenalty) // Attempt to avoid the Jealous mood penalty
-                if (thoughts.SufferingFromThought("Jealous", out _, out _) &&
-                    PawnBedUtils.PerformBetterBedSearch(bedsDescending, currentBed, pawn, pawnLover,
-                    singleOutput: pawn.LabelShort + " claimed a better bed to avoid the Jealous mood penalty.",
-                    partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better bed together so {pawn.LabelShort} could avoid the Jealous mood penalty.",
-                    forTraitDef: TraitDefOf.Jealous, betterBedCustomFunc: delegate (Building_Bed bed)
-                    {
-                        float bedImpressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
-                        foreach (Pawn p in pawn.Map.mapPawns?.SpawnedPawnsInFaction(Faction.OfPlayer))
+                if (thoughts.SufferingFromThought("Jealous", out _, out _))
+                {
+                    orderedBeds = orderedBeds ?? GetOrderedBedsForPawn(pawn);
+                    if (PawnBedUtils.PerformBetterBedSearch(orderedBeds, currentBed, pawn, pawnLover,
+                        singleOutput: pawn.LabelShort + " claimed a better bed to avoid the Jealous mood penalty.",
+                        partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better bed together so {pawn.LabelShort} could avoid the Jealous mood penalty.",
+                        forTraitDef: TraitDefOf.Jealous, betterBedCustomFunc: delegate (Building_Bed bed)
                         {
-                            if (p.HostFaction is null && (p.RaceProps?.Humanlike).GetValueOrDefault(false) && !(p.ownership is null))
+                            float bedImpressiveness = GetBedRoomImpressiveness(bed);
+                            foreach (Pawn p in pawn.Map.mapPawns?.SpawnedPawnsInFaction(Faction.OfPlayer))
                             {
-                                float pImpressiveness = (p.ownership?.OwnedRoom?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
-                                if (pImpressiveness - bedImpressiveness >= Mathf.Abs(bedImpressiveness * 0.1f))
-                                    return false;
+                                if (p.HostFaction is null && (p.RaceProps?.Humanlike).GetValueOrDefault(false) && !(p.ownership is null))
+                                {
+                                    float pImpressiveness = (p.ownership?.OwnedRoom?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
+                                    if (pImpressiveness - bedImpressiveness >= Mathf.Abs(bedImpressiveness * 0.1f))
+                                        return false;
+                                }
                             }
-                        }
-                        return true;
-                    }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous }))
-                    return;
+                            return true;
+                        }, excludedOwnerTraitDefs: jealousPenaltyExcludedOwnerTraitDefs))
+                        return;
+                }
 
             if (ModSettings.avoidGreedyPenalty) // Attempt to avoid the Greedy mood penalty
-                if (thoughts.SufferingFromThought("Greedy", out Thought greedyThought, out float currentBaseMoodEffect) &&
-                    PawnBedUtils.PerformBetterBedSearch(bedsDescending, currentBed, pawn, pawnLover,
-                    singleOutput: pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty.",
-                    partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty.",
-                    forTraitDef: TraitDefOf.Greedy, betterBedCustomFunc: delegate (Building_Bed bed)
-                    {
-                        float impressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
-                        int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
-                        float? bedBaseMoodEffect = greedyThought.def?.stages?[stage]?.baseMoodEffect;
-                        return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
-                    }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }))
-                    return;
+                if (thoughts.SufferingFromThought("Greedy", out Thought greedyThought, out float currentBaseMoodEffect))
+                {
+                    orderedBeds = orderedBeds ?? GetOrderedBedsForPawn(pawn);
+                    if (PawnBedUtils.PerformBetterBedSearch(orderedBeds, currentBed, pawn, pawnLover,
+                        singleOutput: pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty.",
+                        partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty.",
+                        forTraitDef: TraitDefOf.Greedy, betterBedCustomFunc: delegate (Building_Bed bed)
+                        {
+                            int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(GetBedRoomImpressiveness(bed)) + 1;
+                            float? bedBaseMoodEffect = greedyThought.def?.stages?[stage]?.baseMoodEffect;
+                            return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
+                        }, excludedOwnerTraitDefs: greedyPenaltyExcludedOwnerTraitDefs))
+                        return;
+                }
 
             if (ModSettings.avoidAsceticPenalty) // Attempt to avoid the Ascetic mood penalty
                 if (thoughts.SufferingFromThought("Ascetic", out Thought asceticThought, out float currentBaseMoodEffect) &&
-                    (pawnLover is null || !(thoughtsLover?.Find(t => t.def?.defName == "Ascetic") is null)) && // lover should also have Ascetic
-                    PawnBedUtils.PerformBetterBedSearch(bedsAscending, currentBed, pawn, pawnLover,
-                    singleOutput: pawn.LabelShort + " claimed a worse bed to avoid the Ascetic mood penalty.",
-                    partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a worse bed together so they could both avoid the Ascetic mood penalty.",
-                    forTraitDef: TraitDefOf.Ascetic, betterBedCustomFunc: delegate (Building_Bed bed)
-                    {
-                        float impressiveness = (bed.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
-                        int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(impressiveness) + 1;
-                        float? bedBaseMoodEffect = asceticThought.def?.stages?[stage]?.baseMoodEffect;
-                        return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
-                    }, excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Ascetic }))
-                    return;
+                    (pawnLover is null || !(thoughtsLover?.Find(t => t.def?.defName == "Ascetic") is null))) // lover should also have Ascetic
+                {
+                    orderedBedsAscetic = orderedBedsAscetic ?? GetOrderedBedsForPawn(pawn, ascendingImpressiveness: true);
+                    if (PawnBedUtils.PerformBetterBedSearch(orderedBedsAscetic, currentBed, pawn, pawnLover,
+                        singleOutput: pawn.LabelShort + " claimed a worse bed to avoid the Ascetic mood penalty.",
+                        partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a worse bed together so they could both avoid the Ascetic mood penalty.",
+                        forTraitDef: TraitDefOf.Ascetic, betterBedCustomFunc: delegate (Building_Bed bed)
+                        {
+                            int stage = RoomStatDefOf.Impressiveness.GetScoreStageIndex(GetBedRoomImpressiveness(bed)) + 1;
+                            float? bedBaseMoodEffect = asceticThought.def?.stages?[stage]?.baseMoodEffect;
+                            return bedBaseMoodEffect.HasValue && bedBaseMoodEffect.Value > currentBaseMoodEffect;
+                        }, excludedOwnerTraitDefs: asceticPenaltyExcludedOwnerTraitDefs))
+                        return;
+                }
 
             if (ModSettings.claimBetterBeds) // Attempt to claim a better empty bed
-                if (!(pawnLover is null && !(pawnLoverNonMutual is null) && pawnLoverNonMutual.ownership?.OwnedBed?.GetBedSlotCount() > 2) // if not a third wheel in a polyamorous relationship involving bigger beds
-                    && PawnBedUtils.PerformBetterBedSearch(bedsDescending, currentBed, pawn, pawnLover,
-                    singleOutput: pawn.LabelShort + " claimed a better empty bed.",
-                    partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better empty bed together.",
-                    excludedOwnerTraitDefs: new TraitDef[] { TraitDefOf.Jealous, TraitDefOf.Greedy }))
-                    return;
+                if (!(pawnLover is null && !(pawnLoverNonMutual is null) && pawnLoverNonMutual.ownership?.OwnedBed?.GetBedSlotCount() > 2)) // if not a third wheel in a polyamorous relationship involving bigger beds
+                {
+                    orderedBeds = orderedBeds ?? GetOrderedBedsForPawn(pawn);
+                    if (PawnBedUtils.PerformBetterBedSearch(orderedBeds, currentBed, pawn, pawnLover,
+                        singleOutput: pawn.LabelShort + " claimed a better empty bed.",
+                        partnerOutput: $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better empty bed together.",
+                        excludedOwnerTraitDefs: betterBedExcludedOwnerTraitDefs))
+                        return;
+                }
 
             if (ModSettings.avoidPartnerPenalty) // Attempt to avoid the "Want to sleep with partner" mood penalty
                 if (thoughts.SufferingFromThought("WantToSleepWithSpouseOrLover", out _, out _) && (!(pawnLover is null) || !(pawnLoverNonMutual is null)))
@@ -168,7 +176,8 @@ namespace BedAssign
                             {
                                 // Attempt to claim a bed that has more than one sleeping spot for the mutual lovers
                                 // I don't use PawnBedUtils.PerformBetterBedSearch for this due to its more custom nature
-                                foreach (Building_Bed bed in bedsDescending)
+                                orderedBeds = orderedBeds ?? GetOrderedBedsForPawn(pawn);
+                                foreach (Building_Bed bed in orderedBeds)
                                 {
                                     if (bed.GetBedSlotCount() >= 2 && RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def))
                                     {

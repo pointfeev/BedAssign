@@ -27,14 +27,21 @@ namespace BedAssign
 
         public static bool IsBetterThan(this Building_Bed bed, Building_Bed currentBed, Pawn pawn)
         {
+            if (bed is null)
+                return false;
+            if (currentBed is null)
+                return true;
             Room room = bed.GetRoom();
             Room currentRoom = currentBed.GetRoom();
             if (!(room is null) && currentRoom is null)
                 return true; // Prioritize beds with rooms
-            float impressiveness = room.GetStat(RoomStatDefOf.Impressiveness);
-            float currentImpressiveness = currentRoom.GetStat(RoomStatDefOf.Impressiveness);
-            if (impressiveness - currentImpressiveness > ModSettings.betterBedRoomImpressivenessThreshold)
-                return true; // ... then bed room impressiveness
+            if (!(room is null) && !(currentRoom is null))
+            {
+                float impressiveness = room.GetStat(RoomStatDefOf.Impressiveness);
+                float currentImpressiveness = currentRoom.GetStat(RoomStatDefOf.Impressiveness);
+                if (impressiveness - currentImpressiveness > ModSettings.betterBedRoomImpressivenessThreshold)
+                    return true; // ... then bed room impressiveness
+            }
             float rest = bed.GetStatValueForPawn(StatDefOf.BedRestEffectiveness, pawn);
             float currentRest = currentBed.GetStatValueForPawn(StatDefOf.BedRestEffectiveness, pawn);
             if (rest - currentRest > 0)
@@ -64,7 +71,7 @@ namespace BedAssign
             {
                 foreach (Building_Bed bed in orderedBeds)
                 {
-                    if (bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))
+                    if (bed != currentBed && bed.IsExcluded(pawn, pawnLover, forTraitDef, excludedOwnerTraitDefs))
                         continue;
 
                     Building_Bed pawnLoverCurrentBed = pawnLover?.ownership?.OwnedBed;
@@ -84,7 +91,7 @@ namespace BedAssign
             // ... for themself
             foreach (Building_Bed bed in orderedBeds)
             {
-                if (bed.IsExcluded(pawn, forTraitDef, excludedOwnerTraitDefs))
+                if (bed != currentBed && bed.IsExcluded(pawn, pawnLover, forTraitDef, excludedOwnerTraitDefs))
                     continue;
 
                 if (IsBetter(bed) && pawn.TryClaimBed(bed))
@@ -98,19 +105,19 @@ namespace BedAssign
             return false;
         }
 
-        private static bool IsExcluded(this Building_Bed bed, Pawn pawn, TraitDef forTraitDef = null, TraitDef[] excludedOwnerTraitDefs = null)
+        private static bool IsExcluded(this Building_Bed bed, Pawn pawn, Pawn pawnLover = null, TraitDef forTraitDef = null, TraitDef[] excludedOwnerTraitDefs = null)
         {
             List<Pawn> bedOwners = bed.OwnersForReading;
 
             bool bedOwned = bedOwners.Any();
             if (bedOwned && !(forTraitDef is null))
-                bedOwned = bedOwners.Any(p => p != pawn && p.CanBeUsed()
+                bedOwned = bedOwners.Any(p => p != pawn && p != pawnLover && p.CanBeUsed()
                     && (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
             if (bedOwned) return true;
 
             bool bedHasOwnerWithExcludedTrait = false;
             if (!(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
-                bedHasOwnerWithExcludedTrait = bedOwners.Any(p => p != pawn && p.CanBeUsed()
+                bedHasOwnerWithExcludedTrait = bedOwners.Any(p => p != pawn && p != pawnLover && p.CanBeUsed()
                     && (p.story?.traits?.allTraits?.Any(t => excludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
             return bedHasOwnerWithExcludedTrait;
         }

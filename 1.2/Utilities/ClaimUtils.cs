@@ -74,6 +74,13 @@ namespace BedAssign
 
         public static bool TryClaimBed(this Pawn pawn, Building_Bed bed, bool canMakeSpaceFor = true)
         {
+            Building_Bed pawnBed = pawn.ownership.OwnedBed;
+            if (pawnBed == bed)
+            {
+                //BedAssign.Message("TryClaimBed succeeded: " + pawn.LabelShort + " already claims " + bed.LabelShort);
+                return true;
+            }
+
             if (!pawn.CanBeUsed() || !bed.CanBeUsed())
                 return false;
 
@@ -83,24 +90,17 @@ namespace BedAssign
                 return false;
             }
 
-            if (bed.Medical || !RestUtility.CanUseBedEver(pawn, bed.def))
-            {
-                //BedAssign.Message("TryClaimBed failed: " + pawn.LabelShort + " can never use " + bed.LabelShort);
-                return false;
-            }
-
-            Building_Bed pawnBed = pawn.ownership.OwnedBed;
-            if (pawnBed == bed)
-            {
-                //BedAssign.Message("TryClaimBed succeeded: " + pawn.LabelShort + " already claims " + bed.LabelShort);
-                return true;
-            }
-
             Building_Bed pawnForcedBed = pawn.GetForcedBed();
             bool forced = pawnForcedBed is null || pawnForcedBed == bed;
             if (!forced)
             {
                 //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " is not " + pawn.LabelShort + "'s forced bed");
+                return false;
+            }
+
+            if (bed.Medical || !RestUtility.CanUseBedEver(pawn, bed.def))
+            {
+                //BedAssign.Message("TryClaimBed failed: " + pawn.LabelShort + " can never use " + bed.LabelShort);
                 return false;
             }
 

@@ -187,10 +187,11 @@ namespace BedAssign
                                         List<string> bootedPawnNames = new List<string>();
                                         if (otherOwners.Any())
                                         {
+                                            bool bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => (p.story?.traits?.allTraits?
+                                                .Any(t => mutualLoverBedKickExcludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
                                             for (int i = otherOwners.Count - 1; i >= 0; i--)
                                             {
                                                 Pawn sleeper = otherOwners[i];
-                                                bool bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => (p.story?.traits?.allTraits?.Any(t => mutualLoverBedKickExcludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
                                                 Pawn partner = sleeper.GetMostLikedLovePartner();
                                                 if (!(partner is null) && (partner == pawn || partner == pawnLover) && bed.GetBedSlotCount() >= 3)
                                                     continue;

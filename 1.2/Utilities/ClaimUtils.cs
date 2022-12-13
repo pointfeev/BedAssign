@@ -1,6 +1,7 @@
 ﻿using RimWorld;
 
 using System.Collections.Generic;
+using System.Linq;
 
 using Verse;
 using Verse.AI;
@@ -9,21 +10,16 @@ namespace BedAssign
 {
     public static class ClaimUtils
     {
-        public static List<Pawn> GetForcedPawns(this Building_Bed bed)
+        public static IEnumerable<Pawn> GetForcedPawns(this Building_Bed bed)
         {
-            List<Pawn> forcedPawns = new List<Pawn>() { };
-            if (!bed.CanBeUsed())
-                return forcedPawns;
-
-            foreach (KeyValuePair<Pawn, Building_Bed> forcedPair in BedAssignData.ForcedBeds)
-            {
-                Pawn pawn = forcedPair.Key;
-                Building_Bed pawnForcedBed = forcedPair.Value;
-                if (pawnForcedBed == bed && pawn.Map == pawnForcedBed.Map)
-                    forcedPawns.Add(pawn);
-            }
-            //BedAssign.Message("GetForcedPawns: returned " + forcedPawns.Count + " pawns for " + bed.LabelShort);
-            return forcedPawns;
+            if (bed.CanBeUsed())
+                foreach (KeyValuePair<Pawn, Building_Bed> forcedPair in BedAssignData.ForcedBeds)
+                {
+                    Pawn pawn = forcedPair.Key;
+                    Building_Bed pawnForcedBed = forcedPair.Value;
+                    if (pawnForcedBed == bed && pawn.Map == pawnForcedBed.Map)
+                        yield return pawn;
+                }
         }
 
         public static Building_Bed GetForcedBed(this Pawn pawn)
@@ -59,17 +55,14 @@ namespace BedAssign
             if (!pawn.CanBeUsed() || !bed.CanBeUsed())
                 return;
 
-            List<Pawn> otherOwners = bed.OwnersForReading.FindAll(p => p != pawn);
+            IEnumerable<Pawn> otherOwners = bed.OwnersForReading.Where(p => p != pawn);
             if (otherOwners.Any())
-                for (int i = otherOwners.Count - 1; i >= 0; i--)
-                {
-                    Pawn sleeper = otherOwners[i];
+                foreach (Pawn sleeper in otherOwners)
                     if ((!sleeper.CanBeUsed() || !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper))
                         && sleeper.TryUnclaimBed())
                     {
                         //BedAssign.Message("MakeSpaceFor: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort);
                     }
-                }
         }
 
         public static bool TryClaimBed(this Pawn pawn, Building_Bed bed, bool canMakeSpaceFor = true)

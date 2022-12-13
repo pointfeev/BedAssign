@@ -182,16 +182,15 @@ namespace BedAssign
                                     if (bed.GetBedSlotCount() >= 2 && RestUtility.CanUseBedEver(pawn, bed.def) && RestUtility.CanUseBedEver(pawnLover, bed.def))
                                     {
                                         bool canClaim = true;
-                                        List<Pawn> otherOwners = bed.OwnersForReading.FindAll(p => p != pawn && p != pawnLover && p.CanBeUsed());
+                                        IEnumerable<Pawn> otherOwners = bed.OwnersForReading.Where(p => p != pawn && p != pawnLover && p.CanBeUsed());
                                         List<Pawn> bootedPawns = new List<Pawn>();
                                         List<string> bootedPawnNames = new List<string>();
                                         if (otherOwners.Any())
                                         {
                                             bool bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(p => (p.story?.traits?.allTraits?
                                                 .Any(t => mutualLoverBedKickExcludedOwnerTraitDefs.Contains(t.def))).GetValueOrDefault(false));
-                                            for (int i = otherOwners.Count - 1; i >= 0; i--)
+                                            foreach (Pawn sleeper in otherOwners)
                                             {
-                                                Pawn sleeper = otherOwners[i];
                                                 Pawn partner = sleeper.GetMostLikedLovePartner();
                                                 if (!(partner is null) && (partner == pawn || partner == pawnLover) && bed.GetBedSlotCount() >= 3)
                                                     continue;

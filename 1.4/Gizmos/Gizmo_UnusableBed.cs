@@ -1,17 +1,14 @@
-﻿using RimWorld;
-
+﻿using BedAssign.Utilities;
+using RimWorld;
 using Verse;
 
-namespace BedAssign
+namespace BedAssign.Gizmos
 {
-    public class Gizmo_UnusableBed : Command_Toggle
+    public sealed class Gizmo_UnusableBed : Command_Toggle
     {
-        public Building_Bed bed = null;
-
-        public Gizmo_UnusableBed(Building_Bed bed) : base()
+        public Gizmo_UnusableBed(Building_Bed bed)
         {
-            this.bed = bed;
-            toggleAction = delegate ()
+            toggleAction = delegate
             {
                 if (BedAssignData.UnusableBeds.Contains(bed))
                     _ = BedAssignData.UnusableBeds.Remove(bed);

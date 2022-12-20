@@ -1,10 +1,8 @@
-﻿using HarmonyLib;
-
-using RimWorld;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
-
+using BedAssign.Utilities;
+using HarmonyLib;
+using RimWorld;
 using Verse;
 
 namespace BedAssign
@@ -15,14 +13,10 @@ namespace BedAssign
         static HarmonyPatches()
         {
             Harmony harmony = new Harmony("pointfeev.bedassign");
-            _ = harmony.Patch(
-                original: AccessTools.Method(typeof(JobGiver_GetRest), "TryGiveJob"),
-                prefix: new HarmonyMethod(typeof(HarmonyPatches), nameof(JobPrefix))
-            );
-            _ = harmony.Patch(
-                original: AccessTools.Method(typeof(Building_Bed), nameof(Building_Bed.GetGizmos)),
-                postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(GizmoPostfix))
-            );
+            _ = harmony.Patch(AccessTools.Method(typeof(JobGiver_GetRest), "TryGiveJob"),
+                              new HarmonyMethod(typeof(HarmonyPatches), nameof(JobPrefix)));
+            _ = harmony.Patch(AccessTools.Method(typeof(Building_Bed), nameof(Building_Bed.GetGizmos)),
+                              postfix: new HarmonyMethod(typeof(HarmonyPatches), nameof(GizmoPostfix)));
         }
 
         public static bool JobPrefix(Pawn pawn)
@@ -42,7 +36,7 @@ namespace BedAssign
         {
             try
             {
-                __result = __instance.AddModGizmos(__result);
+                __instance.AddModGizmos(ref __result);
             }
             catch (Exception e)
             {

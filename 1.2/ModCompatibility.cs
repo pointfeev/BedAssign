@@ -1,10 +1,6 @@
-﻿using CompatUtils;
-
+﻿using System.Reflection;
+using CompatUtils;
 using RimWorld;
-
-using System;
-using System.Reflection;
-
 using Verse;
 
 namespace BedAssign
@@ -12,12 +8,14 @@ namespace BedAssign
     [StaticConstructorOnStartup]
     public static class ModCompatibility
     {
-        public static MethodInfo hospitalityIsGuestBedMethod;
+        private static readonly MethodInfo HospitalityIsGuestBedMethod;
 
-        static ModCompatibility() => hospitalityIsGuestBedMethod = Compatibility.GetConsistentMethod("Orion.Hospitality", "Hospitality.Utilities.BedUtility", "IsGuestBed", new Type[] {
-                typeof(Building_Bed)
-            }, logError: true);
+        static ModCompatibility() => HospitalityIsGuestBedMethod
+            = Compatibility.GetConsistentMethod("Orion.Hospitality", "Hospitality.Utilities.BedUtility", "IsGuestBed",
+                                                new[] { typeof(Building_Bed) }, true);
 
-        public static bool IsHospitalityGuestBed(this Building_Bed bed) => !(hospitalityIsGuestBedMethod is null) && (bool)hospitalityIsGuestBedMethod.Invoke(null, new object[] { bed });
+        public static bool IsHospitalityGuestBed(this Building_Bed bed) => !(HospitalityIsGuestBedMethod is null)
+                                                                        && (bool)HospitalityIsGuestBedMethod.Invoke(
+                                                                               null, new object[] { bed });
     }
 }

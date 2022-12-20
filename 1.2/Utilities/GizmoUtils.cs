@@ -1,94 +1,64 @@
-﻿using RimWorld;
-
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-
+using BedAssign.Gizmos;
+using RimWorld;
 using Verse;
 
-namespace BedAssign
+namespace BedAssign.Utilities
 {
     public static class GizmoUtils
     {
-        private static readonly Dictionary<Building_Bed, Gizmo_UnusableBed> unusableBedGizmos = new Dictionary<Building_Bed, Gizmo_UnusableBed>();
+        private static readonly Dictionary<int, Gizmo_UnusableBed> UnusableBedGizmos
+            = new Dictionary<int, Gizmo_UnusableBed>();
+
+        private static readonly Dictionary<int, Gizmo_ForceAssignment> ForceAssignmentGizmos
+            = new Dictionary<int, Gizmo_ForceAssignment>();
 
         private static Gizmo_UnusableBed Gizmo_UnusableBed(this Building_Bed bed)
         {
-            if (unusableBedGizmos.TryGetValue(bed, out Gizmo_UnusableBed gizmo))
-            {
+            if (UnusableBedGizmos.TryGetValue(bed.thingIDNumber, out Gizmo_UnusableBed gizmo))
                 return gizmo;
-            }
-
             gizmo = new Gizmo_UnusableBed(bed);
-            unusableBedGizmos.SetOrAdd(bed, gizmo);
+            UnusableBedGizmos.SetOrAdd(bed.thingIDNumber, gizmo);
             return gizmo;
         }
-
-        private static readonly Dictionary<Pawn, Gizmo_ForceAssignment> forceAssignmentGizmos = new Dictionary<Pawn, Gizmo_ForceAssignment>();
 
         private static Gizmo_ForceAssignment Gizmo_ForceAssignment(this Pawn pawn, Building_Bed bed)
         {
-            if (forceAssignmentGizmos.TryGetValue(pawn, out Gizmo_ForceAssignment gizmo))
+            if (ForceAssignmentGizmos.TryGetValue(pawn.thingIDNumber, out Gizmo_ForceAssignment gizmo))
             {
-                gizmo.bed = bed;
+                gizmo.Bed = bed;
                 return gizmo;
             }
             gizmo = new Gizmo_ForceAssignment(pawn, bed);
-            forceAssignmentGizmos.SetOrAdd(pawn, gizmo);
+            ForceAssignmentGizmos.SetOrAdd(pawn.thingIDNumber, gizmo);
             return gizmo;
         }
 
-        public static IEnumerable<Gizmo> AddModGizmos(this Building_Bed bed, IEnumerable<Gizmo> gizmos)
+        public static void AddModGizmos(this Building_Bed bed, ref IEnumerable<Gizmo> gizmos)
         {
             if (!bed.CanBeUsedEver())
-            {
-                return gizmos;
-            }
-
-            List<Gizmo> Gizmos = gizmos.ToList();
-
-            Gizmos.Add(bed.Gizmo_UnusableBed());
-
+                return;
+            gizmos = gizmos.Append(bed.Gizmo_UnusableBed());
             if (!bed.CanBeUsed())
-            {
-                return Gizmos.AsEnumerable();
-            }
-
+                return;
             List<Pawn> forcedPawns = new List<Pawn>();
-            foreach (KeyValuePair<Pawn, Building_Bed> entry in BedAssignData.ForcedBeds.ToList())
+            foreach (KeyValuePair<Pawn, Building_Bed> entry in BedAssignData.ForcedBeds)
             {
                 if (!entry.Key.CanBeUsed())
                 {
-                    if (entry.Value.OwnersForReading.Contains(entry.Key))
-                    {
-                        _ = entry.Value.OwnersForReading.Remove(entry.Key);
-                    }
                     _ = BedAssignData.ForcedBeds.Remove(entry.Key);
                     continue;
                 }
-                if (entry.Value == bed)
-                {
-                    Gizmos.Add(entry.Key.Gizmo_ForceAssignment(bed));
-                    forcedPawns.Add(entry.Key);
-                }
+                if (entry.Value != bed)
+                    continue;
+                gizmos = gizmos.Append(entry.Key.Gizmo_ForceAssignment(bed));
+                forcedPawns.Add(entry.Key);
             }
-
-            if (forcedPawns.Count < bed.GetBedSlotCount())
-            {
-                foreach (Pawn pawn in bed.OwnersForReading)
-                {
-                    if (!pawn.CanBeUsed())
-                    {
-                        continue;
-                    }
-
-                    if (!forcedPawns.Contains(pawn))
-                    {
-                        Gizmos.Add(pawn.Gizmo_ForceAssignment(bed));
-                    }
-                }
-            }
-
-            return Gizmos.AsEnumerable();
+            if (forcedPawns.Count >= bed.CompAssignableToPawn.MaxAssignedPawnsCount)
+                return;
+            gizmos = gizmos.Concat(bed.OwnersForReading.Where(pawn => pawn.CanBeUsed() && !forcedPawns.Contains(pawn))
+                                      .Select(pawn => pawn.Gizmo_ForceAssignment(bed)));
         }
     }
 }

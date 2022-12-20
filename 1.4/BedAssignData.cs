@@ -1,28 +1,28 @@
-﻿using RimWorld;
-
-using System.Collections.Generic;
-
+﻿using System.Collections.Generic;
+using BedAssign.Utilities;
+using RimWorld;
 using Verse;
 
 namespace BedAssign
 {
     public class BedAssignData : GameComponent
     {
+        private static Dictionary<Pawn, Building_Bed> forcedBeds;
+
+        private static List<Building_Bed> unusableBeds;
         public BedAssignData(Game _) { }
 
-        private static Dictionary<Pawn, Building_Bed> forcedBeds;
         public static Dictionary<Pawn, Building_Bed> ForcedBeds
         {
             get
             {
                 if (forcedBeds is null)
                     forcedBeds = new Dictionary<Pawn, Building_Bed>();
-                _ = forcedBeds.RemoveAll((KeyValuePair<Pawn, Building_Bed> entry) => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsedEver());
+                _ = forcedBeds.RemoveAll(entry => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsedEver());
                 return forcedBeds;
             }
         }
 
-        private static List<Building_Bed> unusableBeds;
         public static List<Building_Bed> UnusableBeds
         {
             get
@@ -39,11 +39,10 @@ namespace BedAssign
             base.ExposeData();
             Scribe_Collections.Look(ref forcedBeds, "ForcedBeds", LookMode.Reference, LookMode.Reference);
             Scribe_Collections.Look(ref unusableBeds, "UnusableBeds", LookMode.Reference);
-            if (Scribe.mode == LoadSaveMode.PostLoadInit)
-            {
-                _ = ForcedBeds;
-                _ = UnusableBeds;
-            }
+            if (Scribe.mode != LoadSaveMode.PostLoadInit)
+                return;
+            _ = ForcedBeds;
+            _ = UnusableBeds;
         }
     }
 }

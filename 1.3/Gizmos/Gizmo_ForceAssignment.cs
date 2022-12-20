@@ -1,28 +1,25 @@
-﻿using RimWorld;
-
+﻿using BedAssign.Utilities;
+using RimWorld;
 using UnityEngine;
-
 using Verse;
 
-namespace BedAssign
+namespace BedAssign.Gizmos
 {
     public class Gizmo_ForceAssignment : Command_Toggle
     {
-        public Building_Bed bed = null;
-        public Pawn pawn = null;
+        public Building_Bed Bed;
 
-        public Gizmo_ForceAssignment(Pawn pawn, Building_Bed bed) : base()
+        public Gizmo_ForceAssignment(Pawn pawn, Building_Bed bed)
         {
-            this.bed = bed;
-            this.pawn = pawn;
-            toggleAction = delegate ()
+            Bed = bed;
+            toggleAction = delegate
             {
-                if (BedAssignData.ForcedBeds.TryGetValue(pawn) == this.bed)
+                if (BedAssignData.ForcedBeds.TryGetValue(pawn) == Bed)
                     _ = BedAssignData.ForcedBeds.Remove(pawn);
                 else
-                    BedAssignData.ForcedBeds.SetOrAdd(pawn, this.bed);
+                    BedAssignData.ForcedBeds.SetOrAdd(pawn, Bed);
             };
-            isActive = () => BedAssignData.ForcedBeds.TryGetValue(pawn) == this.bed;
+            isActive = () => BedAssignData.ForcedBeds.TryGetValue(pawn) == Bed;
             defaultLabel = "Force assign " + pawn.LabelShort;
             defaultDesc = "Force " + pawn.LabelShort + " to always take this bed when they decide to get rest.";
             icon = PortraitsCache.Get(pawn, Vector2.one * 75f, Rot4.South, cameraZoom: 1.25f).AsTexture2D();

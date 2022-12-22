@@ -15,12 +15,13 @@ namespace BedAssign.Utilities
                                                      && pawn.def.race.Humanlike;
 
         private static bool IsDesignatedDeconstructOrUninstall(this Building building)
-            => building?.Map?.designationManager is null ||
-               building.Map.designationManager.AllDesignationsOn(building).Any(designation => !(designation is null) &&
-                                                                                   (designation.def
-                                                                                    == DesignationDefOf.Deconstruct
-                                                                                    || designation.def
-                                                                                    == DesignationDefOf.Uninstall));
+            => building?.MapHeld?.designationManager is null ||
+               building.MapHeld.designationManager.AllDesignationsOn(building).Any(
+                   designation => !(designation is null) &&
+                                  (designation.def
+                                == DesignationDefOf.Deconstruct
+                                || designation.def
+                                == DesignationDefOf.Uninstall));
 
         public static bool CanBeUsed(this Building_Bed bed) => CanBeUsedEver(bed)
                                                             && !BedAssignData.UnusableBeds.Contains(bed)
@@ -47,12 +48,12 @@ namespace BedAssign.Utilities
                 if (impressiveness - currentImpressiveness > ModSettings.BetterBedRoomImpressivenessThreshold)
                     return true; // ... then bed room impressiveness
             }
-            float rest = bed.GetStatValueForPawn(StatDefOf.BedRestEffectiveness, pawn);
-            float currentRest = currentBed.GetStatValueForPawn(StatDefOf.BedRestEffectiveness, pawn);
+            float rest = bed.GetStatValue(StatDefOf.BedRestEffectiveness);
+            float currentRest = currentBed.GetStatValue(StatDefOf.BedRestEffectiveness);
             if (rest - currentRest > 0)
                 return true; // ... then bed rest effectiveness
-            float comfort = bed.GetStatValueForPawn(StatDefOf.Comfort, pawn);
-            float currentComfort = currentBed.GetStatValueForPawn(StatDefOf.Comfort, pawn);
+            float comfort = bed.GetStatValue(StatDefOf.Comfort);
+            float currentComfort = currentBed.GetStatValue(StatDefOf.Comfort);
             return comfort - currentComfort > 0; // ... then bed comfort
         }
 

@@ -4,7 +4,7 @@ using Verse;
 
 namespace BedAssign.Gizmos
 {
-    public class Gizmo_UnusableBed : Command_Toggle
+    public sealed class Gizmo_UnusableBed : Command_Toggle
     {
         public Gizmo_UnusableBed(Building_Bed bed)
         {

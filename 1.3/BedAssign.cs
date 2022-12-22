@@ -35,16 +35,18 @@ namespace BedAssign
         private static float GetBedRoomImpressiveness(Building_Bed b)
             => (b.GetRoom()?.GetStat(RoomStatDefOf.Impressiveness)).GetValueOrDefault(0);
 
-        private static IOrderedEnumerable<Building_Bed> GetOrderedBedsForPawn(
-            Pawn pawn, bool ascendingImpressiveness = false)
+        private static IOrderedEnumerable<Building_Bed> GetOrderedBeds(this Map map,
+                                                                       bool ascendingImpressiveness = false)
         {
-            IEnumerable<Building_Bed> beds = pawn?.Map?.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>()
-                                                 ?.Where(b => b.CanBeUsed());
+            IEnumerable<Building_Bed> beds = map.listerBuildings?.AllBuildingsColonistOfClass<Building_Bed>()
+                                               ?.Where(b => b.CanBeUsed());
+            if (beds == null)
+                return Enumerable.Empty<Building_Bed>() as IOrderedEnumerable<Building_Bed>;
             IOrderedEnumerable<Building_Bed> orderedBeds = ascendingImpressiveness
                 ? beds.OrderBy(GetBedRoomImpressiveness)
                 : beds.OrderByDescending(GetBedRoomImpressiveness);
-            return orderedBeds.ThenByDescending(b => b.GetStatValueForPawn(StatDefOf.BedRestEffectiveness, pawn))
-                              .ThenByDescending(b => b.GetStatValueForPawn(StatDefOf.Comfort, pawn))
+            return orderedBeds.ThenByDescending(b => b.GetStatValue(StatDefOf.BedRestEffectiveness))
+                              .ThenByDescending(b => b.GetStatValue(StatDefOf.Comfort))
                               .ThenBy(b => b.thingIDNumber);
         }
 
@@ -52,9 +54,10 @@ namespace BedAssign
         {
             if (!pawn.CanBeUsed()) return;
             Building_Bed currentBed = pawn.ownership.OwnedBed;
+            Map map = pawn.MapHeld;
 
             // Un-claim off-map bed to give space to other colonists
-            if (currentBed != null && pawn.Map != currentBed.Map)
+            if (currentBed != null && map != currentBed.MapHeld)
             {
                 _ = pawn.ownership.UnclaimBed();
                 Message(pawn.LabelShort + " un-claimed their bed due to being off-map.",
@@ -70,7 +73,7 @@ namespace BedAssign
                     Message(pawn.LabelShort + " claimed their forced bed.", new LookTargets(new List<Pawn> { pawn }));
                 return;
             }
-            if (pawn.Map is null) return;
+            if (map == null) return;
 
             // Get the pawn's most liked lover if it's mutual
             Pawn pawnLover = pawn.GetMostLikedLovePartner();
@@ -89,7 +92,7 @@ namespace BedAssign
             if (ModSettings.AvoidJealousPenalty) // Attempt to avoid the Jealous mood penalty
                 if (thoughts.SufferingFromThought("Jealous", out _, out _))
                 {
-                    orderedBeds = GetOrderedBedsForPawn(pawn);
+                    orderedBeds = map.GetOrderedBeds();
                     if (PawnBedUtils.PerformBetterBedSearch(orderedBeds, currentBed, pawn, pawnLover,
                                                             pawn.LabelShort
                                                           + " claimed a better bed to avoid the Jealous mood penalty.",
@@ -97,8 +100,11 @@ namespace BedAssign
                                                             TraitDefOf.Jealous, delegate(Building_Bed bed)
                                                             {
                                                                 float bedImpressiveness = GetBedRoomImpressiveness(bed);
-                                                                foreach (Pawn p in pawn.Map.mapPawns
-                                                                           ?.SpawnedPawnsInFaction(Faction.OfPlayer))
+                                                                IEnumerable<Pawn> pawns = map.mapPawns
+                                                                  ?.SpawnedPawnsInFaction(Faction.OfPlayer);
+                                                                if (pawns == null)
+                                                                    return false;
+                                                                foreach (Pawn p in pawns)
                                                                     if (p.HostFaction is null
                                                                      && (p.RaceProps?.Humanlike).GetValueOrDefault(
                                                                             false) && !(p.ownership is null))
@@ -118,7 +124,7 @@ namespace BedAssign
             if (ModSettings.AvoidGreedyPenalty) // Attempt to avoid the Greedy mood penalty
                 if (thoughts.SufferingFromThought("Greedy", out Thought greedyThought, out float currentBaseMoodEffect))
                 {
-                    orderedBeds = orderedBeds ?? GetOrderedBedsForPawn(pawn);
+                    orderedBeds = orderedBeds ?? map.GetOrderedBeds();
                     if (PawnBedUtils.PerformBetterBedSearch(orderedBeds, currentBed, pawn, pawnLover,
                                                             pawn.LabelShort
                                                           + " claimed a better bed to avoid the Greedy mood penalty.",
@@ -142,7 +148,7 @@ namespace BedAssign
                   || !(thoughtsLover?.Find(t => t.def?.defName
                                              == "Ascetic") is null))) // lover should also have Ascetic
                 {
-                    IOrderedEnumerable<Building_Bed> orderedBedsAscetic = GetOrderedBedsForPawn(pawn, true);
+                    IOrderedEnumerable<Building_Bed> orderedBedsAscetic = map.GetOrderedBeds(true);
                     if (PawnBedUtils.PerformBetterBedSearch(orderedBedsAscetic, currentBed, pawn, pawnLover,
                                                             pawn.LabelShort
                                                           + " claimed a worse bed to avoid the Ascetic mood penalty.",
@@ -165,7 +171,7 @@ namespace BedAssign
                                                              .MaxAssignedPawnsCount
                                          > 2)) // if not a third wheel in a polyamorous relationship involving bigger beds
                 {
-                    orderedBeds = orderedBeds ?? GetOrderedBedsForPawn(pawn);
+                    orderedBeds = orderedBeds ?? map.GetOrderedBeds();
                     if (PawnBedUtils.PerformBetterBedSearch(orderedBeds, currentBed, pawn, pawnLover,
                                                             pawn.LabelShort + " claimed a better empty bed.",
                                                             $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better empty bed together.",
@@ -203,7 +209,7 @@ namespace BedAssign
                             }
                             // Attempt to claim a bed that has more than one sleeping spot for the mutual lovers
                             // I don't use PawnBedUtils.PerformBetterBedSearch for this due to its more custom nature
-                            orderedBeds = orderedBeds ?? GetOrderedBedsForPawn(pawn);
+                            orderedBeds = orderedBeds ?? map.GetOrderedBeds();
                             foreach (Building_Bed bed in orderedBeds)
                                 if (bed.CompAssignableToPawn.MaxAssignedPawnsCount >= 2
                                  && RestUtility.CanUseBedEver(pawn, bed.def)

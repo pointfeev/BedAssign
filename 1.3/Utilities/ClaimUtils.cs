@@ -15,7 +15,7 @@ namespace BedAssign.Utilities
             foreach (Pawn pawn in from forcedPair in BedAssignData.ForcedBeds
                                   let pawn = forcedPair.Key
                                   let pawnForcedBed = forcedPair.Value
-                                  where pawnForcedBed == bed && pawn.Map == pawnForcedBed.Map
+                                  where pawnForcedBed == bed && pawn.MapHeld == pawnForcedBed.MapHeld
                                   select pawn)
                 yield return pawn;
         }
@@ -25,7 +25,7 @@ namespace BedAssign.Utilities
             if (!pawn.CanBeUsed())
                 return null;
             Building_Bed pawnForcedBed = BedAssignData.ForcedBeds.TryGetValue(pawn);
-            if (pawnForcedBed != null && pawn.Map == pawnForcedBed.Map && pawnForcedBed.CanBeUsed())
+            if (pawnForcedBed != null && pawn.MapHeld == pawnForcedBed.MapHeld && pawnForcedBed.CanBeUsed())
                 //BedAssign.Message("GetForcedBed: returned " + pawnForcedBed.LabelShort + " for " + pawn.LabelShort);
                 return pawnForcedBed;
             return null;
@@ -36,7 +36,7 @@ namespace BedAssign.Utilities
             if (!pawn.CanBeUsed())
                 return null;
             Pawn partner = LovePartnerRelationUtility.ExistingMostLikedLovePartner(pawn, false);
-            if (partner != null && pawn.Map == partner.Map)
+            if (partner != null && pawn.MapHeld == partner.MapHeld && BedUtility.WillingToShareBed(pawn, partner))
                 //BedAssign.Message("GetMostLikedLovePartner: returned " + partner.LabelShort + " for " + pawn.LabelShort);
                 return partner;
             return null;
@@ -66,7 +66,7 @@ namespace BedAssign.Utilities
                 return true;
             if (!pawn.CanBeUsed() || !bed.CanBeUsed())
                 return false;
-            if (pawn.Map != bed.Map)
+            if (pawn.MapHeld != bed.MapHeld)
                 //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort);
                 return false;
             Building_Bed pawnForcedBed = pawn.GetForcedBed();
@@ -110,7 +110,7 @@ namespace BedAssign.Utilities
                 //BedAssign.Message("TryUnClaimBed failed: " + pawn.LabelShort + " has no bed");
                 return false;
             Building_Bed pawnForcedBed = BedAssignData.ForcedBeds.TryGetValue(pawn);
-            if (pawnForcedBed == null || pawnForcedBed != pawnBed || pawnForcedBed.Map != pawn.Map)
+            if (pawnForcedBed == null || pawnForcedBed != pawnBed || pawnForcedBed.MapHeld != pawn.MapHeld)
             {
                 //BedAssign.Message("TryUnClaimBed succeeded: " + pawn.LabelShort + " unclaimed " + pawnBed.LabelShort);
                 pawn.mindState.lastDisturbanceTick = Find.TickManager.TicksGame;

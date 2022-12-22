@@ -36,7 +36,7 @@ namespace BedAssign.Utilities
             if (!pawn.CanBeUsed())
                 return null;
             Pawn partner = LovePartnerRelationUtility.ExistingMostLikedLovePartner(pawn, false);
-            if (partner != null && pawn.MapHeld == partner.MapHeld)
+            if (partner != null && pawn.MapHeld == partner.MapHeld && BedUtility.WillingToShareBed(pawn, partner))
                 //BedAssign.Message("GetMostLikedLovePartner: returned " + partner.LabelShort + " for " + pawn.LabelShort);
                 return partner;
             return null;

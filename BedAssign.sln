@@ -11,20 +11,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BedAssign1.4", "1.4\BedAssi
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D92D3642-4CB7-4971-8797-9FA071CF3104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D92D3642-4CB7-4971-8797-9FA071CF3104}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D92D3642-4CB7-4971-8797-9FA071CF3104}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D92D3642-4CB7-4971-8797-9FA071CF3104}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2F24200E-1CE3-4472-A9B2-79E691D5746E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2F24200E-1CE3-4472-A9B2-79E691D5746E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2F24200E-1CE3-4472-A9B2-79E691D5746E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2F24200E-1CE3-4472-A9B2-79E691D5746E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1564BDC4-9175-46ED-A3A0-3EB370B3692E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1564BDC4-9175-46ED-A3A0-3EB370B3692E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1564BDC4-9175-46ED-A3A0-3EB370B3692E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1564BDC4-9175-46ED-A3A0-3EB370B3692E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection

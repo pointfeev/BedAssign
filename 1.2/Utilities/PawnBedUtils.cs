@@ -31,29 +31,31 @@ namespace BedAssign.Utilities
                                                                    !bed.Medical && !bed.ForPrisoners
                                                                 && bed.def.building.bed_humanlike;
 
-        private static bool IsBetterThan(this Building_Bed bed, Building_Bed currentBed, Pawn pawn)
+        private static bool IsBetterThan(this Building_Bed bed, Building_Bed currentBed)
         {
             if (bed is null)
                 return false;
             if (currentBed is null)
                 return true;
+            if (bed == currentBed)
+                return false;
             Room room = bed.GetRoom();
             Room currentRoom = currentBed.GetRoom();
-            if (!(room is null) && currentRoom is null)
-                return true; // Prioritize beds with rooms
             if (!(room is null))
             {
-                float impressiveness = room.GetStat(RoomStatDefOf.Impressiveness);
-                float currentImpressiveness = currentRoom.GetStat(RoomStatDefOf.Impressiveness);
+                if (currentRoom is null)
+                    return true; // Prioritize beds with rooms
+                int impressiveness = Convert.ToInt32(room.GetStat(RoomStatDefOf.Impressiveness));
+                int currentImpressiveness = Convert.ToInt32(currentRoom.GetStat(RoomStatDefOf.Impressiveness));
                 if (impressiveness - currentImpressiveness > ModSettings.BetterBedRoomImpressivenessThreshold)
                     return true; // ... then bed room impressiveness
             }
-            float rest = bed.GetStatValue(StatDefOf.BedRestEffectiveness);
-            float currentRest = currentBed.GetStatValue(StatDefOf.BedRestEffectiveness);
+            int rest = Convert.ToInt32(bed.GetStatValue(StatDefOf.BedRestEffectiveness));
+            int currentRest = Convert.ToInt32(currentBed.GetStatValue(StatDefOf.BedRestEffectiveness));
             if (rest - currentRest > 0)
                 return true; // ... then bed rest effectiveness
-            float comfort = bed.GetStatValue(StatDefOf.Comfort);
-            float currentComfort = currentBed.GetStatValue(StatDefOf.Comfort);
+            int comfort = Convert.ToInt32(bed.GetStatValue(StatDefOf.Comfort));
+            int currentComfort = Convert.ToInt32(currentBed.GetStatValue(StatDefOf.Comfort));
             return comfort - currentComfort > 0; // ... then bed comfort
         }
 
@@ -69,28 +71,27 @@ namespace BedAssign.Utilities
             bool IsBetter(Building_Bed bed)
                 => !(betterBedCustomFunc is null)
                 && betterBedCustomFunc.Invoke(bed) // use the custom function if one was supplied
-                || bed.IsBetterThan(
-                       currentBed, pawn); // default IsBetterThan method (bed room impressiveness & bed stats)
+                || bed.IsBetterThan(currentBed); // default IsBetterThan method (bed room impressiveness & bed stats)
 
             // ... with their lover
             if (!(pawnLover is null))
             {
+                Building_Bed pawnLoverCurrentBed = pawnLover.ownership?.OwnedBed;
                 foreach (Building_Bed bed in orderedBeds)
                 {
+                    if (bed.CompAssignableToPawn.MaxAssignedPawnsCount < 2)
+                        continue;
                     if (bed != currentBed && bed.IsExcluded(pawn, pawnLover, forTraitDef, excludedOwnerTraitDefs))
                         continue;
-                    Building_Bed pawnLoverCurrentBed = pawnLover.ownership?.OwnedBed;
-                    if (bed.CompAssignableToPawn.MaxAssignedPawnsCount >= 2 && IsBetter(bed) && pawn.TryClaimBed(bed)
-                     && pawnLover.TryClaimBed(bed))
+                    if (!IsBetter(bed) || !pawn.TryClaimBed(bed) || !pawnLover.TryClaimBed(bed))
                     {
-                        if (bed != currentBed || bed != pawnLoverCurrentBed)
-                            BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn> { pawn, pawnLover }));
-                        return true;
+                        if (!(currentBed is null))
+                            _ = pawn.TryClaimBed(currentBed);
+                        continue;
                     }
-                    if (!(currentBed is null))
-                    {
-                        _ = pawn.TryClaimBed(currentBed);
-                    }
+                    if (bed != currentBed || bed != pawnLoverCurrentBed)
+                        BedAssign.Message(partnerOutput, new LookTargets(new List<Pawn> { pawn, pawnLover }));
+                    return true;
                 }
                 if (!canIgnoreLover)
                     return false;
@@ -99,7 +100,8 @@ namespace BedAssign.Utilities
             // ... for themself
             foreach (Building_Bed bed in orderedBeds)
             {
-                if (bed != currentBed && bed.IsExcluded(pawn, pawnLover, forTraitDef, excludedOwnerTraitDefs))
+                if (bed != currentBed && bed.IsExcluded(pawn, forTraitDef: forTraitDef,
+                                                        excludedOwnerTraitDefs: excludedOwnerTraitDefs))
                     continue;
                 if (!IsBetter(bed) || !pawn.TryClaimBed(bed))
                     continue;
@@ -118,7 +120,8 @@ namespace BedAssign.Utilities
             if (bedOwned && !(forTraitDef is null))
                 bedOwned = bedOwners.Any(p => p != pawn && p != pawnLover && p.CanBeUsed()
                                            && (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));
-            if (bedOwned) return true;
+            if (bedOwned)
+                return true;
             bool bedHasOwnerWithExcludedTrait = false;
             if (!(excludedOwnerTraitDefs is null) && excludedOwnerTraitDefs.Any())
                 bedHasOwnerWithExcludedTrait = bedOwners.Any(p => p != pawn && p != pawnLover && p.CanBeUsed()

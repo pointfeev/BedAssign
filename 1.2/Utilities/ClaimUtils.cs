@@ -47,8 +47,6 @@ namespace BedAssign.Utilities
             if (!pawn.CanBeUsed() || !bed.CanBeUsed())
                 return;
             IEnumerable<Pawn> otherOwners = bed.OwnersForReading.Where(p => p != pawn);
-            if (!otherOwners.Any())
-                return;
             foreach (Pawn sleeper in otherOwners)
                 if ((!sleeper.CanBeUsed() || !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper))
                  && sleeper.TryUnClaimBed())

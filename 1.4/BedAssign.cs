@@ -186,7 +186,8 @@ namespace BedAssign
                     {
                         // Attempt to claim their polyamorous lover's bed if there's extra space
                         Building_Bed loverNonMutualBed = pawnLoverNonMutual.ownership?.OwnedBed;
-                        if (currentBed != loverNonMutualBed && pawn.TryClaimBed(loverNonMutualBed, false))
+                        if (loverNonMutualBed != null && currentBed != loverNonMutualBed
+                                                      && pawn.TryClaimBed(loverNonMutualBed, false))
                         {
                             Message(pawn.LabelShort + " claimed the bed of their polyamorous lover "
                                                     + pawnLoverNonMutual.LabelShort + ".",
@@ -197,8 +198,8 @@ namespace BedAssign
                     else
                     {
                         // Attempt to simply claim their mutual lover's bed
-                        Building_Bed loverBed = pawnLover.ownership.OwnedBed;
-                        if (currentBed != loverBed)
+                        Building_Bed loverBed = pawnLover.ownership?.OwnedBed;
+                        if (loverBed != null && currentBed != loverBed)
                         {
                             if (loverBed.CompAssignableToPawn.MaxAssignedPawnsCount >= 2 && pawn.TryClaimBed(loverBed))
                             {
@@ -210,22 +211,32 @@ namespace BedAssign
                             // Attempt to claim a bed that has more than one sleeping spot for the mutual lovers
                             // I don't use PawnBedUtils.PerformBetterBedSearch for this due to its more custom nature
                             orderedBeds = orderedBeds ?? map.GetOrderedBeds();
-                            foreach (Building_Bed bed in orderedBeds)
-                                if (bed.CompAssignableToPawn.MaxAssignedPawnsCount >= 2
-                                 && RestUtility.CanUseBedEver(pawn, bed.def)
-                                 && RestUtility.CanUseBedEver(pawnLover, bed.def))
+                            foreach (Building_Bed bed in orderedBeds.Where(
+                                         b => b.CompAssignableToPawn.MaxAssignedPawnsCount >= 2
+                                           && RestUtility.CanUseBedEver(pawn, b.def)
+                                           && RestUtility.CanUseBedEver(pawnLover, b.def)))
+                            {
+                                bool canClaim = true;
+                                List<Pawn> bedOwners = bed.OwnersForReading;
+                                List<Pawn> otherOwners = bedOwners
+                                                        .Where(p => p != pawn && p != pawnLover && p.CanBeUsed())
+                                                        .ToList();
+                                List<Pawn> bootedPawns = null;
+                                List<string> bootedPawnNames = null;
+                                if (otherOwners.Count != 0)
                                 {
-                                    bool canClaim = true;
-                                    IEnumerable<Pawn> otherOwners
-                                        = bed.OwnersForReading.Where(p => p != pawn && p != pawnLover && p.CanBeUsed());
-                                    List<Pawn> bootedPawns = new List<Pawn>();
-                                    List<string> bootedPawnNames = new List<string>();
-                                    if (otherOwners.Any())
+                                    bool bedHasOwnerWithExcludedTrait = otherOwners.Any(
+                                        p => (p.story?.traits?.allTraits?.Any(
+                                                t => MutualLoverBedKickExcludedOwnerTraitDefs.Contains(t.def)))
+                                           .GetValueOrDefault(false));
+                                    if (bedHasOwnerWithExcludedTrait)
                                     {
-                                        bool bedHasOwnerWithExcludedTrait = bed.OwnersForReading.Any(
-                                            p => (p.story?.traits?.allTraits?
-                                                   .Any(t => MutualLoverBedKickExcludedOwnerTraitDefs.Contains(t.def)))
-                                               .GetValueOrDefault(false));
+                                        canClaim = false;
+                                    }
+                                    else
+                                    {
+                                        bootedPawns = new List<Pawn>();
+                                        bootedPawnNames = new List<string>();
                                         foreach (Pawn sleeper in otherOwners)
                                         {
                                             Pawn partner = sleeper.GetMostLikedLovePartner();
@@ -233,8 +244,7 @@ namespace BedAssign
                                                                    && bed.CompAssignableToPawn.MaxAssignedPawnsCount
                                                                    >= 3)
                                                 continue;
-                                            if (!bedHasOwnerWithExcludedTrait && partner is null
-                                             && sleeper.TryUnClaimBed())
+                                            if (partner is null && sleeper.TryUnClaimBed())
                                             {
                                                 bootedPawns.Add(sleeper);
                                                 bootedPawnNames.Add(sleeper.LabelShort);
@@ -246,26 +256,25 @@ namespace BedAssign
                                             }
                                         }
                                     }
-                                    switch (canClaim)
-                                    {
-                                        case true when pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed):
-                                        {
-                                            if (bootedPawns.Any())
-                                                Message(
-                                                    $"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} kicked {string.Join(" and ", bootedPawnNames)} out of their bed so they could claim it together.",
-                                                    new LookTargets(
-                                                        new List<Pawn> { pawn, pawnLover }.Concat(bootedPawns)));
-                                            else
-                                                Message(
-                                                    $"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} claimed an empty bed together.",
-                                                    new LookTargets(new List<Pawn> { pawn, pawnLover }));
-                                            return;
-                                        }
-                                        case true when !(currentBed is null):
-                                            _ = pawn.TryClaimBed(currentBed);
-                                            break;
-                                    }
                                 }
+                                if (!canClaim)
+                                    continue;
+                                if (pawn.TryClaimBed(bed) && pawnLover.TryClaimBed(bed))
+                                {
+                                    if (bootedPawns != null && bootedPawns.Count > 0)
+                                        Message(
+                                            $"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} kicked {string.Join(" and ", bootedPawnNames)} out of their bed so they could claim it together.",
+                                            new LookTargets(new List<Pawn> { pawn, pawnLover }.Concat(bootedPawns)));
+                                    else
+                                        Message(
+                                            $"Lovers {pawn.LabelShort} and {pawnLover.LabelShort} claimed an empty bed together.",
+                                            new LookTargets(new List<Pawn> { pawn, pawnLover }));
+                                }
+                                else if (!(currentBed is null))
+                                {
+                                    _ = pawn.TryClaimBed(currentBed);
+                                }
+                            }
                         }
                     }
                 }

@@ -3,46 +3,45 @@ using BedAssign.Utilities;
 using RimWorld;
 using Verse;
 
-namespace BedAssign
+namespace BedAssign;
+
+public class BedAssignData : GameComponent
 {
-    public class BedAssignData : GameComponent
+    private static Dictionary<Pawn, Building_Bed> forcedBeds;
+
+    private static List<Building_Bed> unusableBeds;
+    public BedAssignData(Game _) { }
+
+    public static Dictionary<Pawn, Building_Bed> ForcedBeds
     {
-        private static Dictionary<Pawn, Building_Bed> forcedBeds;
-
-        private static List<Building_Bed> unusableBeds;
-        public BedAssignData(Game _) { }
-
-        public static Dictionary<Pawn, Building_Bed> ForcedBeds
+        get
         {
-            get
-            {
-                if (forcedBeds is null)
-                    forcedBeds = new Dictionary<Pawn, Building_Bed>();
-                _ = forcedBeds.RemoveAll(entry => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsedEver());
-                return forcedBeds;
-            }
+            if (forcedBeds is null)
+                forcedBeds = new();
+            _ = forcedBeds.RemoveAll(entry => !entry.Key.CanBeUsed() || !entry.Value.CanBeUsedEver());
+            return forcedBeds;
         }
+    }
 
-        public static List<Building_Bed> UnusableBeds
+    public static List<Building_Bed> UnusableBeds
+    {
+        get
         {
-            get
-            {
-                if (unusableBeds is null)
-                    unusableBeds = new List<Building_Bed>();
-                _ = unusableBeds.RemoveAll(bed => !bed.CanBeUsedEver());
-                return unusableBeds;
-            }
+            if (unusableBeds is null)
+                unusableBeds = new();
+            _ = unusableBeds.RemoveAll(bed => !bed.CanBeUsedEver());
+            return unusableBeds;
         }
+    }
 
-        public override void ExposeData()
-        {
-            base.ExposeData();
-            Scribe_Collections.Look(ref forcedBeds, "ForcedBeds", LookMode.Reference, LookMode.Reference);
-            Scribe_Collections.Look(ref unusableBeds, "UnusableBeds", LookMode.Reference);
-            if (Scribe.mode != LoadSaveMode.PostLoadInit)
-                return;
-            _ = ForcedBeds;
-            _ = UnusableBeds;
-        }
+    public override void ExposeData()
+    {
+        base.ExposeData();
+        Scribe_Collections.Look(ref forcedBeds, "ForcedBeds", LookMode.Reference, LookMode.Reference);
+        Scribe_Collections.Look(ref unusableBeds, "UnusableBeds", LookMode.Reference);
+        if (Scribe.mode != LoadSaveMode.PostLoadInit)
+            return;
+        _ = ForcedBeds;
+        _ = UnusableBeds;
     }
 }

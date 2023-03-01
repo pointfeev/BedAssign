@@ -55,7 +55,7 @@ public static class GizmoUtils
         }
         if (forcedPawns.Count >= bed.CompAssignableToPawn.MaxAssignedPawnsCount)
             return;
-        gizmos = gizmos.Concat(bed.OwnersForReading.Where(pawn => pawn.CanBeUsed() && !forcedPawns.Contains(pawn))
-                                  .Select(pawn => pawn.Gizmo_ForceAssignment(bed)));
+        gizmos = gizmos.Concat(bed.CompAssignableToPawn.AssignedPawns.Where(pawn => pawn.CanBeUsed() && !forcedPawns.Contains(pawn))
+           .Select(pawn => pawn.Gizmo_ForceAssignment(bed)));
     }
 }

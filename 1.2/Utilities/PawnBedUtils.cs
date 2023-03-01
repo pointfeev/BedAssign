@@ -100,7 +100,7 @@ public static class PawnBedUtils
     private static bool IsExcluded(this Building_Bed bed, Pawn pawn, Pawn pawnLover = null, TraitDef forTraitDef = null,
         TraitDef[] excludedOwnerTraitDefs = null)
     {
-        List<Pawn> bedOwners = bed.OwnersForReading;
+        IEnumerable<Pawn> bedOwners = bed.CompAssignableToPawn.AssignedPawns.ToList();
         bool bedOwned = bedOwners.Any();
         if (bedOwned && forTraitDef is not null)
             bedOwned = bedOwners.Any(p => p != pawn && p != pawnLover && p.CanBeUsed() && (p.story?.traits?.HasTrait(forTraitDef)).GetValueOrDefault(false));

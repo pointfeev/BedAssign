@@ -41,7 +41,7 @@ public static class BedAssign
             ? beds.OrderBy(GetBedRoomImpressiveness)
             : beds.OrderByDescending(GetBedRoomImpressiveness);
         return orderedBeds.ThenByDescending(b => b.GetStatValue(StatDefOf.BedRestEffectiveness)).ThenByDescending(b => b.GetStatValue(StatDefOf.Comfort))
-                          .ThenBy(b => b.thingIDNumber);
+           .ThenBy(b => b.thingIDNumber);
     }
 
     public static void LookForBedReassignment(this Pawn pawn)
@@ -111,7 +111,7 @@ public static class BedAssign
         if (ModSettings.AvoidGreedyPenalty) // Attempt to avoid the Greedy mood penalty
             if (thoughts.SufferingFromThought("Greedy", out Thought greedyThought, out float currentBaseMoodEffect))
             {
-                orderedBeds = orderedBeds ?? map.GetOrderedBeds();
+                orderedBeds ??= map.GetOrderedBeds();
                 if (PawnBedUtils.PerformBetterBedSearch(orderedBeds, currentBed, pawn, pawnLover,
                         pawn.LabelShort + " claimed a better bed to avoid the Greedy mood penalty.",
                         $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better bed together so {pawn.LabelShort} could avoid the Greedy mood penalty.",
@@ -144,7 +144,7 @@ public static class BedAssign
                                     && pawnLoverNonMutual.ownership?.OwnedBed?.CompAssignableToPawn.MaxAssignedPawnsCount
                                      > 2)) // if not a third wheel in a polyamorous relationship involving bigger beds
             {
-                orderedBeds = orderedBeds ?? map.GetOrderedBeds();
+                orderedBeds ??= map.GetOrderedBeds();
                 if (PawnBedUtils.PerformBetterBedSearch(orderedBeds, currentBed, pawn, pawnLover, pawn.LabelShort + " claimed a better empty bed.",
                         $"Lovers {pawn.LabelShort} and {pawnLover?.LabelShort} claimed a better empty bed together.",
                         excludedOwnerTraitDefs: BetterBedExcludedOwnerTraitDefs))
@@ -177,13 +177,13 @@ public static class BedAssign
                         }
                         // Attempt to claim a bed that has more than one sleeping spot for the mutual lovers
                         // I don't use PawnBedUtils.PerformBetterBedSearch for this due to its more custom nature
-                        orderedBeds = orderedBeds ?? map.GetOrderedBeds();
+                        orderedBeds ??= map.GetOrderedBeds();
                         foreach (Building_Bed bed in orderedBeds.Where(b
                                      => b.CompAssignableToPawn.MaxAssignedPawnsCount >= 2 && RestUtility.CanUseBedEver(pawn, b.def)
                                                                                           && RestUtility.CanUseBedEver(pawnLover, b.def)))
                         {
                             bool canClaim = true;
-                            List<Pawn> bedOwners = bed.OwnersForReading;
+                            IEnumerable<Pawn> bedOwners = bed.CompAssignableToPawn.AssignedPawns;
                             List<Pawn> otherOwners = bedOwners.Where(p => p != pawn && p != pawnLover && p.CanBeUsed()).ToList();
                             List<Pawn> bootedPawns = null;
                             List<string> bootedPawnNames = null;

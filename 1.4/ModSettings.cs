@@ -6,6 +6,7 @@ namespace BedAssign;
 public class ModSettings : Verse.ModSettings
 {
     public static bool OutputReassignmentMessages = true;
+    public static bool AccountForOffMapForcedPawns = true;
     public static bool AvoidJealousPenalty = true;
     public static bool AvoidGreedyPenalty = true;
     public static bool AvoidAsceticPenalty = true;
@@ -17,6 +18,7 @@ public class ModSettings : Verse.ModSettings
     public override void ExposeData()
     {
         Scribe_Values.Look(ref OutputReassignmentMessages, "outputReassignmentMessages", true);
+        Scribe_Values.Look(ref AccountForOffMapForcedPawns, "accountForOffMapForcedPawns", true);
         Scribe_Values.Look(ref AvoidJealousPenalty, "avoidJealousPenalty", true);
         Scribe_Values.Look(ref AvoidGreedyPenalty, "avoidGreedyPenalty", true);
         Scribe_Values.Look(ref AvoidAsceticPenalty, "avoidAsceticPenalty", true);
@@ -42,6 +44,9 @@ public class Mod : Verse.Mod
         listingStandard.Begin(inRect);
         listingStandard.CheckboxLabeled("Output reassignment messages", ref ModSettings.OutputReassignmentMessages,
             "Should the mod display messages in the top left whenever pawns are automatically reassigned by the mod?");
+        listingStandard.GapLine();
+        listingStandard.CheckboxLabeled("Account for forced pawns off-map from their forced beds", ref ModSettings.AccountForOffMapForcedPawns,
+            "Should the mod account for forced pawns that are off-map from their forced beds?");
         listingStandard.GapLine();
         listingStandard.CheckboxLabeled("Attempt to avoid Jealous mood penalty", ref ModSettings.AvoidJealousPenalty,
             "Should the mod care about the Jealous mood penalty?");

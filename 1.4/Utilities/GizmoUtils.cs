@@ -12,7 +12,7 @@ public static class GizmoUtils
 
     private static readonly Dictionary<int, Gizmo_ForceAssignment> ForceAssignmentGizmos = new();
 
-    private static Gizmo_UnusableBed Gizmo_UnusableBed(this Building_Bed bed)
+    private static Gizmo_UnusableBed GetUnusableBedGizmo(this Building_Bed bed)
     {
         if (UnusableBedGizmos.TryGetValue(bed.thingIDNumber, out Gizmo_UnusableBed gizmo))
             return gizmo;
@@ -21,7 +21,7 @@ public static class GizmoUtils
         return gizmo;
     }
 
-    private static Gizmo_ForceAssignment Gizmo_ForceAssignment(this Pawn pawn, Building_Bed bed)
+    private static Gizmo_ForceAssignment GetForceAssignmentGizmo(this Pawn pawn, Building_Bed bed)
     {
         if (ForceAssignmentGizmos.TryGetValue(pawn.thingIDNumber, out Gizmo_ForceAssignment gizmo))
         {
@@ -37,7 +37,7 @@ public static class GizmoUtils
     {
         if (!bed.CanBeUsedEver())
             return;
-        gizmos = gizmos.Append(bed.Gizmo_UnusableBed());
+        gizmos = gizmos.Append(bed.GetUnusableBedGizmo());
         if (!bed.CanBeUsed())
             return;
         List<Pawn> forcedPawns = new();
@@ -50,12 +50,12 @@ public static class GizmoUtils
             }
             if (entry.Value != bed)
                 continue;
-            gizmos = gizmos.Append(entry.Key.Gizmo_ForceAssignment(bed));
+            gizmos = gizmos.Append(entry.Key.GetForceAssignmentGizmo(bed));
             forcedPawns.Add(entry.Key);
         }
         if (forcedPawns.Count >= bed.CompAssignableToPawn.MaxAssignedPawnsCount)
             return;
         gizmos = gizmos.Concat(bed.CompAssignableToPawn.AssignedPawns.Where(pawn => pawn.CanBeUsed() && !forcedPawns.Contains(pawn))
-           .Select(pawn => pawn.Gizmo_ForceAssignment(bed)));
+           .Select(pawn => pawn.GetForceAssignmentGizmo(bed)));
     }
 }

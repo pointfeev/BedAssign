@@ -15,7 +15,7 @@ public static class ClaimUtils
         foreach (Pawn pawn in from forcedPair in BedAssignData.ForcedBeds
                               let pawn = forcedPair.Key
                               let pawnForcedBed = forcedPair.Value
-                              where pawnForcedBed == bed && pawn.MapHeld == pawnForcedBed.MapHeld
+                              where pawnForcedBed == bed
                               select pawn)
             yield return pawn;
     }
@@ -25,7 +25,7 @@ public static class ClaimUtils
         if (!pawn.CanBeUsed())
             return null;
         Building_Bed pawnForcedBed = BedAssignData.ForcedBeds.TryGetValue(pawn);
-        if (pawnForcedBed != null && pawn.MapHeld == pawnForcedBed.MapHeld && pawnForcedBed.CanBeUsed())
+        if (pawnForcedBed != null && pawnForcedBed.CanBeUsed())
             //BedAssign.Message("GetForcedBed: returned " + pawnForcedBed.LabelShort + " for " + pawn.LabelShort);
             return pawnForcedBed;
         return null;
@@ -66,14 +66,15 @@ public static class ClaimUtils
             //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " not on same map as " + pawn.LabelShort);
             return false;
         Building_Bed pawnForcedBed = pawn.GetForcedBed();
-        bool forced = pawnForcedBed is null || pawnForcedBed == bed;
-        if (!forced)
+        if (pawnForcedBed is not null && pawnForcedBed != bed && pawnForcedBed.MapHeld == pawn.MapHeld)
             //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " is not " + pawn.LabelShort + "'s forced bed");
             return false;
         if (bed.Medical || !RestUtility.CanUseBedEver(pawn, bed.def))
             //BedAssign.Message("TryClaimBed failed: " + pawn.LabelShort + " can never use " + bed.LabelShort);
             return false;
-        if (bed.GetForcedPawns().Any(sleeper => sleeper != pawn && sleeper.CanBeUsed() && !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper)))
+        if (bed.GetForcedPawns().Any(sleeper
+                => sleeper != pawn && sleeper.CanBeUsed() && (!ModSettings.AccountForOffMapForcedPawns || sleeper.MapHeld == bed.MapHeld)
+                && !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper)))
             //BedAssign.Message("TryClaimBed failed: " + bed.LabelShort + " has forced pawns that are unable to sleep with " + pawn.LabelShort);
             return false;
         if (!bed.InteractionCell.InAllowedArea(pawn))
@@ -96,11 +97,11 @@ public static class ClaimUtils
         if (!pawn.CanBeUsed())
             return false;
         Building_Bed pawnBed = pawn.ownership.OwnedBed;
-        if (pawnBed == null)
+        if (pawnBed is null)
             //BedAssign.Message("TryUnClaimBed failed: " + pawn.LabelShort + " has no bed");
             return false;
         Building_Bed pawnForcedBed = BedAssignData.ForcedBeds.TryGetValue(pawn);
-        if (pawnForcedBed == null || pawnForcedBed != pawnBed || pawnForcedBed.MapHeld != pawn.MapHeld)
+        if (pawnForcedBed is null || pawnForcedBed != pawnBed || ModSettings.AccountForOffMapForcedPawns && pawnForcedBed.MapHeld != pawn.MapHeld)
         {
             //BedAssign.Message("TryUnClaimBed succeeded: " + pawn.LabelShort + " unclaimed " + pawnBed.LabelShort);
             pawn.mindState.lastDisturbanceTick = Find.TickManager.TicksGame;

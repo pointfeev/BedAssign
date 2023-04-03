@@ -51,14 +51,6 @@ public static class BedAssign
         Building_Bed currentBed = pawn.ownership.OwnedBed;
         Map map = pawn.MapHeld;
 
-        // Un-claim off-map bed to give space to other colonists
-        if (currentBed != null && map != currentBed.MapHeld)
-        {
-            _ = pawn.ownership.UnclaimBed();
-            Message(pawn.LabelShort + " un-claimed their bed due to being off-map.", new(new List<Pawn> { pawn }));
-            currentBed = null;
-        }
-
         // Attempt to claim forced bed
         Building_Bed forcedBed = pawn.GetForcedBed();
         if (forcedBed is not null && pawn.TryClaimBed(forcedBed))

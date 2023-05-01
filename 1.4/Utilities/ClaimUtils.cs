@@ -52,6 +52,7 @@ public static class ClaimUtils
              && sleeper.TryUnClaimBed())
             {
                 //BedAssign.Message("MakeSpaceFor: kicked " + sleeper.LabelShort + " out of " + bed.LabelShort + " to make space for " + pawn.LabelShort);
+                break;
             }
     }
 

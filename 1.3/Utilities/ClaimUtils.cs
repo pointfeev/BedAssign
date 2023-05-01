@@ -46,7 +46,7 @@ public static class ClaimUtils
     {
         if (!pawn.CanBeUsed() || !bed.CanBeUsed())
             return;
-        IEnumerable<Pawn> otherOwners = bed.CompAssignableToPawn.AssignedPawns.Where(p => p != pawn);
+        List<Pawn> otherOwners = bed.CompAssignableToPawn.AssignedPawns.Where(p => p != pawn).ToList();
         foreach (Pawn sleeper in otherOwners)
             if ((!sleeper.CanBeUsed() || !LovePartnerRelationUtility.LovePartnerRelationExists(pawn, sleeper) || !BedUtility.WillingToShareBed(pawn, sleeper))
              && sleeper.TryUnClaimBed())

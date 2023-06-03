@@ -8,7 +8,7 @@ namespace BedAssign.Utilities;
 
 public static class PawnBedUtils
 {
-    public static bool CanBeUsed(this Pawn pawn) => pawn is { ownership: { }, Faction.IsPlayer: true, IsFreeColonist: true, def.race.Humanlike: true };
+    public static bool CanBeUsed(this Pawn pawn) => pawn is { ownership: not null, Faction.IsPlayer: true, IsFreeColonist: true, def.race.Humanlike: true };
 
     private static bool IsDesignatedDeconstructOrUninstall(this Building building)
         => building?.MapHeld?.designationManager is null || building.MapHeld.designationManager.AllDesignationsOn(building).Any(designation
@@ -18,7 +18,8 @@ public static class PawnBedUtils
         => CanBeUsedEver(bed) && !BedAssignData.UnusableBeds.Contains(bed) && !bed.IsDesignatedDeconstructOrUninstall();
 
     public static bool CanBeUsedEver(this Building_Bed bed)
-        => bed is not null && !bed.IsHospitalityGuestBed() && !bed.Medical && !bed.ForPrisoners && bed.def.building.bed_humanlike;
+        => bed is not null && (!ModSettings.IgnoreSleepingSpots || bed.def.defName != "SleepingSpot" && bed.def.defName != "DoubleSleepingSpot")
+                           && !bed.IsHospitalityGuestBed() && !bed.Medical && !bed.ForPrisoners && bed.def.building.bed_humanlike;
 
     private static bool IsBetterThan(this Building_Bed bed, Building_Bed currentBed)
     {
@@ -30,22 +31,36 @@ public static class PawnBedUtils
             return false;
         Room room = bed.GetRoom();
         Room currentRoom = currentBed.GetRoom();
+        if (room is not null && currentRoom is null)
+            return true;
+        if (room is null && currentRoom is not null)
+            return false;
         if (room is not null)
         {
-            if (currentRoom is null)
-                return true; // Prioritize beds with rooms
+            if (ModSettings.PrioritizeBedrooms) // ... then bedrooms (rooms with only 1 bed) over barracks (rooms with more than 1 bed)
+            {
+                int beds = room.ContainedBeds.Count();
+                int currentBeds = currentRoom.ContainedBeds.Count();
+                switch (beds)
+                {
+                    case 1 when currentBeds > 1:
+                        return true;
+                    case > 1 when currentBeds == 1:
+                        return false;
+                }
+            }
             int impressiveness = Convert.ToInt32(room.GetStat(RoomStatDefOf.Impressiveness));
             int currentImpressiveness = Convert.ToInt32(currentRoom.GetStat(RoomStatDefOf.Impressiveness));
             if (impressiveness - currentImpressiveness > ModSettings.BetterBedRoomImpressivenessThreshold)
-                return true; // ... then bed room impressiveness
+                return true; // ... then room impressiveness
         }
         int rest = Convert.ToInt32(bed.GetStatValue(StatDefOf.BedRestEffectiveness));
         int currentRest = Convert.ToInt32(currentBed.GetStatValue(StatDefOf.BedRestEffectiveness));
         if (rest - currentRest > 0)
-            return true; // ... then bed rest effectiveness
+            return true; // ... then rest effectiveness
         int comfort = Convert.ToInt32(bed.GetStatValue(StatDefOf.Comfort));
         int currentComfort = Convert.ToInt32(currentBed.GetStatValue(StatDefOf.Comfort));
-        return comfort - currentComfort > 0; // ... then bed comfort
+        return comfort - currentComfort > 0; // ... then comfort
     }
 
     public static bool PerformBetterBedSearch(IOrderedEnumerable<Building_Bed> orderedBeds, Building_Bed currentBed, Pawn pawn, Pawn pawnLover,
